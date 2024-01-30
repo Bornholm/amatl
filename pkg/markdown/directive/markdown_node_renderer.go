@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/renderer/markdown"
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/yuin/goldmark/ast"
 )
 

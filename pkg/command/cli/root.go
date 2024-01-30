@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"forge.cadoles.com/wpetit/amatl/pkg/command/cli/render"
+	"github.com/Bornholm/amatl/pkg/command/cli/render"
 	"github.com/urfave/cli/v2"
 )
 

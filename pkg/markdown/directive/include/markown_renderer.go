@@ -3,8 +3,8 @@ package include
 import (
 	"bytes"
 
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive"
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/renderer/markdown"
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 )
