@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive"
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive/include"
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/renderer/markdown"
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/yuin/goldmark/renderer"

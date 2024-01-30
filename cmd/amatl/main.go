@@ -1,8 +1,8 @@
 package main
 
 import (
-	"forge.cadoles.com/wpetit/amatl/pkg/command"
-	"forge.cadoles.com/wpetit/amatl/pkg/command/cli"
+	"github.com/Bornholm/amatl/pkg/command"
+	"github.com/Bornholm/amatl/pkg/command/cli"
 )
 
 func main() {

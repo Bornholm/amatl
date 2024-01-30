@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"

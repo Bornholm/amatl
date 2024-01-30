@@ -1,8 +1,8 @@
 package render
 
 import (
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive"
-	"forge.cadoles.com/wpetit/amatl/pkg/markdown/directive/include"
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"

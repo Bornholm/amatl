@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Bornholm/amatl/pkg/html"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/yuin/goldmark"
@@ -51,7 +52,13 @@ func HTML() *cli.Command {
 
 				render = newHTMLRenderer()
 
-				if err := render.Render(os.Stdout, source, document); err != nil {
+				var body bytes.Buffer
+
+				if err := render.Render(&body, source, document); err != nil {
+					return errors.WithStack(err)
+				}
+
+				if err := html.Layout(os.Stdout, body.Bytes()); err != nil {
 					return errors.WithStack(err)
 				}
 			}

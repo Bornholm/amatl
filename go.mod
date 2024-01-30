@@ -1,4 +1,4 @@
-module forge.cadoles.com/wpetit/amatl
+module github.com/Bornholm/amatl
 
 go 1.21.6
 
