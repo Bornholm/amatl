@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
@@ -13,45 +12,48 @@ import (
 
 func HTML() *cli.Command {
 	return &cli.Command{
-		Name:  "html",
-		Flags: withCommonFlags(),
+		Name: "html",
+		Flags: withCommonFlags(
+			flagHTMLLayout,
+			flagHTMLLayoutVars,
+		),
 		Action: func(ctx *cli.Context) error {
-			for _, filename := range ctx.Args().Slice() {
-				baseDir, err := filepath.Abs(filepath.Dir(filename))
-				if err != nil {
-					return errors.WithStack(err)
-				}
+			_, dirname, source, err := getMarkdownSource(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
-				source, err := os.ReadFile(filename)
-				if err != nil {
-					return errors.WithStack(err)
-				}
+			layoutVars, err := getHTMLLayoutVars(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
-				pipeline := pipeline.New(
-					// Preprocess the markdown entrypoint
-					// document to include potential directives
-					MarkdownTransformer(
-						WithBaseDir(baseDir),
-						WithToc(false),
+			pipeline := pipeline.New(
+				// Preprocess the markdown entrypoint
+				// document to include potential directives
+				MarkdownTransformer(
+					WithBaseDir(dirname),
+					WithToc(false),
+				),
+				// Render the consolidated document
+				// as HTML
+				HTMLTransformer(
+					WithMarkdownTransformerOptions(
+						WithBaseDir(dirname),
+						WithToc(isTocEnabled(ctx)),
 					),
-					// Render the consolidated document
-					// as HTML
-					HTMLTransformer(
-						WithMarkdownTransformerOptions(
-							WithBaseDir(baseDir),
-							WithToc(isTocEnabled(ctx)),
-						),
-					),
-				)
+					WithLayoutURL(getHTMLLayout(ctx)),
+					WithLayoutVars(layoutVars),
+				),
+			)
 
-				result, err := pipeline.Transform(ctx.Context, source)
-				if err != nil {
-					return errors.WithStack(err)
-				}
+			result, err := pipeline.Transform(ctx.Context, source)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
-				if _, err := io.Copy(os.Stdout, bytes.NewBuffer(result)); err != nil {
-					return errors.WithStack(err)
-				}
+			if _, err := io.Copy(os.Stdout, bytes.NewBuffer(result)); err != nil {
+				return errors.WithStack(err)
 			}
 
 			return nil
