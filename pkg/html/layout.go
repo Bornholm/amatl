@@ -50,9 +50,11 @@ type LayoutOptions struct {
 
 type LayoutOptionFunc func(opts *LayoutOptions)
 
+const DefaultLayoutURL = "embed://document.html"
+
 func NewLayoutOptions(funcs ...LayoutOptionFunc) *LayoutOptions {
 	opts := &LayoutOptions{
-		RawLayoutURL: "embed://document.html",
+		RawLayoutURL: DefaultLayoutURL,
 		Vars:         map[string]any{},
 	}
 
@@ -66,6 +68,14 @@ func NewLayoutOptions(funcs ...LayoutOptionFunc) *LayoutOptions {
 func WithVar(key string, value any) LayoutOptionFunc {
 	return func(opts *LayoutOptions) {
 		opts.Vars[key] = value
+	}
+}
+
+func WithVars(vars map[string]any) LayoutOptionFunc {
+	return func(opts *LayoutOptions) {
+		for key, value := range vars {
+			opts.Vars[key] = value
+		}
 	}
 }
 

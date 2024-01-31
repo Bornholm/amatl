@@ -2,16 +2,13 @@ package render
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/Bornholm/amatl/pkg/html"
+	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"github.com/yuin/goldmark"
-	"github.com/yuin/goldmark/extension"
-	"github.com/yuin/goldmark/renderer"
-	"github.com/yuin/goldmark/text"
 )
 
 func HTML() *cli.Command {
@@ -20,7 +17,7 @@ func HTML() *cli.Command {
 		Flags: withCommonFlags(),
 		Action: func(ctx *cli.Context) error {
 			for _, filename := range ctx.Args().Slice() {
-				basePath, err := filepath.Abs(filepath.Dir(filename))
+				baseDir, err := filepath.Abs(filepath.Dir(filename))
 				if err != nil {
 					return errors.WithStack(err)
 				}
@@ -30,35 +27,29 @@ func HTML() *cli.Command {
 					return errors.WithStack(err)
 				}
 
-				reader := text.NewReader(source)
+				pipeline := pipeline.New(
+					// Preprocess the markdown entrypoint
+					// document to include potential directives
+					MarkdownTransformer(
+						WithBaseDir(baseDir),
+						WithToc(false),
+					),
+					// Render the consolidated document
+					// as HTML
+					HTMLTransformer(
+						WithMarkdownTransformerOptions(
+							WithBaseDir(baseDir),
+							WithToc(isTocEnabled(ctx)),
+						),
+					),
+				)
 
-				parse := newParser(basePath, false)
-				render := newMarkdownRenderer()
-
-				document := parse.Parse(reader)
-
-				var buf bytes.Buffer
-				if err := render.Render(&buf, source, document); err != nil {
+				result, err := pipeline.Transform(ctx.Context, source)
+				if err != nil {
 					return errors.WithStack(err)
 				}
 
-				source = buf.Bytes()
-				reader = text.NewReader(source)
-
-				withToc := isTocEnabled(ctx)
-
-				parse = newParser(basePath, withToc)
-				document = parse.Parse(reader)
-
-				render = newHTMLRenderer()
-
-				var body bytes.Buffer
-
-				if err := render.Render(&body, source, document); err != nil {
-					return errors.WithStack(err)
-				}
-
-				if err := html.Layout(os.Stdout, body.Bytes()); err != nil {
+				if _, err := io.Copy(os.Stdout, bytes.NewBuffer(result)); err != nil {
 					return errors.WithStack(err)
 				}
 			}
@@ -66,14 +57,4 @@ func HTML() *cli.Command {
 			return nil
 		},
 	}
-}
-
-func newHTMLRenderer() renderer.Renderer {
-	markdown := goldmark.New(
-		goldmark.WithExtensions(
-			extension.GFM,
-		),
-	)
-
-	return markdown.Renderer()
 }

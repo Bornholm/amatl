@@ -6,14 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Bornholm/amatl/pkg/markdown/directive"
-	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
-	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
+	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
-	"github.com/yuin/goldmark/renderer"
-	"github.com/yuin/goldmark/text"
-	"github.com/yuin/goldmark/util"
 )
 
 func Markdown() *cli.Command {
@@ -22,7 +17,7 @@ func Markdown() *cli.Command {
 		Flags: withCommonFlags(),
 		Action: func(ctx *cli.Context) error {
 			for _, filename := range ctx.Args().Slice() {
-				basePath, err := filepath.Abs(filepath.Dir(filename))
+				baseDir, err := filepath.Abs(filepath.Dir(filename))
 				if err != nil {
 					return errors.WithStack(err)
 				}
@@ -32,19 +27,19 @@ func Markdown() *cli.Command {
 					return errors.WithStack(err)
 				}
 
-				reader := text.NewReader(source)
+				pipeline := pipeline.New(
+					MarkdownTransformer(
+						WithBaseDir(baseDir),
+						WithToc(isTocEnabled(ctx)),
+					),
+				)
 
-				parse := newParser(basePath, false)
-				render := newMarkdownRenderer()
-
-				document := parse.Parse(reader)
-
-				var buf bytes.Buffer
-				if err := render.Render(&buf, source, document); err != nil {
+				result, err := pipeline.Transform(ctx.Context, source)
+				if err != nil {
 					return errors.WithStack(err)
 				}
 
-				if _, err := io.Copy(os.Stdout, &buf); err != nil {
+				if _, err := io.Copy(os.Stdout, bytes.NewBuffer(result)); err != nil {
 					return errors.WithStack(err)
 				}
 			}
@@ -52,37 +47,4 @@ func Markdown() *cli.Command {
 			return nil
 		},
 	}
-}
-
-func newMarkdownRenderer() renderer.Renderer {
-	render := markdown.NewRenderer()
-
-	render.AddOptions(
-		renderer.WithNodeRenderers(
-			util.Prioritized(
-				directive.NewRenderer(
-					directive.WithRenderer(
-						include.Type,
-						&include.NodeRenderer{
-							Cache:    cache,
-							Renderer: render,
-						},
-					),
-				), 0,
-			),
-		),
-		markdown.WithNodeRenderer(
-			directive.KindDirective,
-			directive.NewMarkdownNodeRenderer(
-				directive.WithMarkdownDirectiveRenderer(
-					include.Type,
-					&include.MarkdownRenderer{
-						Cache: cache,
-					},
-				),
-			),
-		),
-	)
-
-	return render
 }
