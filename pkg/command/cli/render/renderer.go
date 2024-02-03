@@ -8,6 +8,8 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/util"
+
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 )
 
 func newMarkdownRenderer() renderer.Renderer {
@@ -47,6 +49,7 @@ func newHTMLRenderer() renderer.Renderer {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
+			highlighting.Highlighting,
 		),
 	)
 
