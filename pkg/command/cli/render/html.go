@@ -12,11 +12,8 @@ import (
 
 func HTML() *cli.Command {
 	return &cli.Command{
-		Name: "html",
-		Flags: withCommonFlags(
-			flagHTMLLayout,
-			flagHTMLLayoutVars,
-		),
+		Name:  "html",
+		Flags: withHTMLFlags(),
 		Action: func(ctx *cli.Context) error {
 			_, dirname, source, err := getMarkdownSource(ctx)
 			if err != nil {

@@ -13,9 +13,14 @@ import (
 )
 
 const (
-	paramToc            = "toc"
-	paramHTMLLayout     = "html-layout"
-	paramHTMLLayoutVars = "html-layout-vars"
+	paramToc             = "toc"
+	paramHTMLLayout      = "html-layout"
+	paramHTMLLayoutVars  = "html-layout-vars"
+	paramPDFMarginTop    = "pdf-margin-top"
+	paramPDFMarginLeft   = "pdf-margin-left"
+	paramPDFMarginRight  = "pdf-margin-right"
+	paramPDFMarginBottom = "pdf-margin-bottom"
+	paramPDFScale        = "pdf-scale"
 )
 
 var (
@@ -31,6 +36,31 @@ var (
 	flagHTMLLayoutVars = &cli.StringFlag{
 		Name:  paramHTMLLayoutVars,
 		Value: "{}",
+	}
+	flagPDFMarginTop = &cli.Float64Flag{
+		Name:  paramPDFMarginTop,
+		Value: DefaultPDFMargin,
+		Usage: "pdf top margin in centimeters",
+	}
+	flagPDFMarginRight = &cli.Float64Flag{
+		Name:  paramPDFMarginRight,
+		Value: DefaultPDFMargin,
+		Usage: "pdf right margin in centimeters",
+	}
+	flagPDFMarginLeft = &cli.Float64Flag{
+		Name:  paramPDFMarginLeft,
+		Value: DefaultPDFMargin,
+		Usage: "pdf left margin in centimeters",
+	}
+	flagPDFMarginBottom = &cli.Float64Flag{
+		Name:  paramPDFMarginBottom,
+		Value: DefaultPDFMargin,
+		Usage: "pdf bottom margin in centimeters",
+	}
+	flagPDFScale = &cli.Float64Flag{
+		Name:  paramPDFScale,
+		Value: DefaultPDFScale,
+		Usage: "pdf print scale",
 	}
 )
 
@@ -59,6 +89,27 @@ func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	}, flags...)
 }
 
+func withHTMLFlags(flags ...cli.Flag) []cli.Flag {
+	flags = append(flags,
+		flagHTMLLayout,
+		flagHTMLLayoutVars,
+	)
+
+	return withCommonFlags(flags...)
+}
+
+func withPDFFlags(flags ...cli.Flag) []cli.Flag {
+	flags = append(flags,
+		flagPDFMarginTop,
+		flagPDFMarginLeft,
+		flagPDFMarginRight,
+		flagPDFMarginBottom,
+		flagPDFScale,
+	)
+
+	return withHTMLFlags(flags...)
+}
+
 func getMarkdownSource(ctx *cli.Context) (string, string, []byte, error) {
 	filename := ctx.Args().First()
 	dirname, err := filepath.Abs(filepath.Dir(filename))
@@ -72,4 +123,15 @@ func getMarkdownSource(ctx *cli.Context) (string, string, []byte, error) {
 	}
 
 	return filename, dirname, source, nil
+}
+
+func getPDFScale(ctx *cli.Context) float64 {
+	return ctx.Float64(paramPDFScale)
+}
+
+func getPDFMargin(ctx *cli.Context) (top float64, right float64, bottom float64, left float64) {
+	return ctx.Float64(paramPDFMarginTop),
+		ctx.Float64(paramPDFMarginRight),
+		ctx.Float64(paramPDFMarginBottom),
+		ctx.Float64(paramPDFMarginLeft)
 }
