@@ -12,13 +12,13 @@ type Registry struct {
 }
 
 // Resolve implements Resolver.
-func (r *Registry) Resolve(url *url.URL) (*template.Template, error) {
+func (r *Registry) Resolve(url *url.URL, funcs template.FuncMap) (*template.Template, error) {
 	resolver, exists := r.resolvers[url.Scheme]
 	if !exists {
 		return nil, errors.Wrapf(ErrSchemeNotRegistered, "could not resolve scheme '%s'", url.Scheme)
 	}
 
-	tmpl, err := resolver.Resolve(url)
+	tmpl, err := resolver.Resolve(url, funcs)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

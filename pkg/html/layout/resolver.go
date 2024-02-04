@@ -6,5 +6,5 @@ import (
 )
 
 type Resolver interface {
-	Resolve(url *url.URL) (*template.Template, error)
+	Resolve(url *url.URL, funcs template.FuncMap) (*template.Template, error)
 }

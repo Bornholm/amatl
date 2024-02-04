@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>{{ .Vars.Title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css">
+    <style>
+      .markdown-body {
+        box-sizing: border-box;
+      }
+
+      .markdown-body pre code {
+        overflow-wrap: break-word;
+        white-space: break-spaces;
+      }
+
+      @page {
+        size: landscape;
+      }
+
+      section.slide {
+        display: flex;
+        flex-direction: column;
+        page-break-before: always;
+        page-break-inside: avoid;
+        width: 100%;
+        height: 100%;
+      }
+
+      section.slide:first-of-type {
+        page-break-before: avoid;
+      }
+
+      hr {
+        opacity: 0;
+        page-break-after: always;
+      }
+    </style>
+  </head>
+  <body>
+    {{range htmlSplit .Body "hr"}}
+      <section class="slide markdown-body">
+        {{ . }}
+      </section>
+    {{end}}
+  </body>
+</html>

@@ -15,22 +15,11 @@ import (
 var (
 	//go:embed templates/*.html
 	templateFs embed.FS
-	templates  *template.Template
 )
 
 const templatePattern = "templates/*.html"
 
-func init() {
-	tmpl, err := template.New("").ParseFS(templateFs, templatePattern)
-	if err != nil {
-		panic(errors.Wrap(err, "could not parse embedded layout templates"))
-	}
-
-	templates = tmpl
-}
-
 func Available() []string {
-
 	filenames, err := fs.Glob(templateFs, templatePattern)
 	if err != nil {
 		panic(errors.WithStack(err))
@@ -49,7 +38,12 @@ type Resolver struct {
 }
 
 // Resolve implements layout.Resolver.
-func (*Resolver) Resolve(url *url.URL) (*template.Template, error) {
+func (*Resolver) Resolve(url *url.URL, funcs template.FuncMap) (*template.Template, error) {
+	templates, err := template.New("").Funcs(funcs).ParseFS(templateFs, templatePattern)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse embedded templates")
+	}
+
 	name := url.Host
 
 	for _, tmpl := range templates.Templates() {
