@@ -3,7 +3,6 @@ package render
 import (
 	"bytes"
 	"io"
-	"os"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
@@ -71,7 +70,18 @@ func PDF() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			if _, err := io.Copy(os.Stdout, bytes.NewBuffer(result)); err != nil {
+			output, err := getOutput(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			defer func() {
+				if err := output.Close(); err != nil {
+					panic(errors.WithStack(err))
+				}
+			}()
+
+			if _, err := io.Copy(output, bytes.NewBuffer(result)); err != nil {
 				return errors.WithStack(err)
 			}
 

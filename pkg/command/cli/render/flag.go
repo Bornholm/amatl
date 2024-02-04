@@ -3,6 +3,7 @@ package render
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -15,6 +16,7 @@ import (
 const (
 	paramToc             = "toc"
 	paramVars            = "vars"
+	paramOutput          = "output"
 	paramHTMLLayout      = "html-layout"
 	paramHTMLLayoutVars  = "html-layout-vars"
 	paramPDFMarginTop    = "pdf-margin-top"
@@ -28,6 +30,12 @@ var (
 	flagToc = &cli.BoolFlag{
 		Name:  paramToc,
 		Value: false,
+	}
+	flagOutput = &cli.StringFlag{
+		Name:    paramOutput,
+		Aliases: []string{"o"},
+		Value:   "-",
+		Usage:   "output generated content to given file, '-' to write to stdout",
 	}
 	flagVars = &cli.StringFlag{
 		Name:  paramVars,
@@ -108,6 +116,7 @@ func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	return append([]cli.Flag{
 		flagToc,
 		flagVars,
+		flagOutput,
 	}, flags...)
 }
 
@@ -132,8 +141,26 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 	return withHTMLFlags(flags...)
 }
 
+func getOutput(ctx *cli.Context) (io.WriteCloser, error) {
+	output := ctx.String(paramOutput)
+	if output == "-" {
+		return os.Stdout, nil
+	}
+
+	file, err := os.OpenFile(output, os.O_CREATE|os.O_WRONLY, 0640)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	return file, nil
+}
+
 func getMarkdownSource(ctx *cli.Context) (string, string, []byte, error) {
 	filename := ctx.Args().First()
+	if filename == "" {
+		return "", "", nil, errors.New("you must provide the path to a markdown file")
+	}
+
 	dirname, err := filepath.Abs(filepath.Dir(filename))
 	if err != nil {
 		return "", "", nil, errors.WithStack(err)
