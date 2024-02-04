@@ -7,6 +7,7 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/util"
+	"go.abhg.dev/goldmark/mermaid"
 	"go.abhg.dev/goldmark/toc"
 )
 
@@ -18,6 +19,9 @@ func newParser(baseDir string, withToC bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
+			&mermaid.Extender{
+				RenderMode: mermaid.RenderModeClient,
+			},
 		),
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),

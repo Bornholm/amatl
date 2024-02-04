@@ -10,6 +10,9 @@ import (
 	"github.com/yuin/goldmark/util"
 
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
+
+	mermaidRenderer "github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/mermaid"
+	"go.abhg.dev/goldmark/mermaid"
 )
 
 func newMarkdownRenderer() renderer.Renderer {
@@ -40,6 +43,14 @@ func newMarkdownRenderer() renderer.Renderer {
 				),
 			),
 		),
+		markdown.WithNodeRenderer(
+			mermaid.Kind,
+			&mermaidRenderer.BlockNodeRenderer{},
+		),
+		markdown.WithNodeRenderer(
+			mermaid.ScriptKind,
+			&mermaidRenderer.ScriptBlockNodeRenderer{},
+		),
 	)
 
 	return render
@@ -50,6 +61,9 @@ func newHTMLRenderer() renderer.Renderer {
 		goldmark.WithExtensions(
 			extension.GFM,
 			highlighting.Highlighting,
+			&mermaid.Extender{
+				RenderMode: mermaid.RenderModeClient,
+			},
 		),
 	)
 
