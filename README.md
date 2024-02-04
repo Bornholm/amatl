@@ -1,6 +1,6 @@
 # `amatl`
 
-Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files to full-fledged documents from the command line.
+Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged documents from the command line.
 
 > **Why the name `amatl` ?**
 >
