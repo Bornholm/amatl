@@ -2,6 +2,7 @@ package dataurl
 
 import (
 	"mime"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -30,6 +31,10 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 
 		destination := string(image.Destination)
 
+		if isURL(destination) {
+			return ast.WalkContinue, nil
+		}
+
 		if !filepath.IsAbs(destination) {
 			destination = filepath.Join(t.Cwd, destination)
 		}
@@ -55,3 +60,8 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 }
 
 var _ parser.ASTTransformer = &Transformer{}
+
+func isURL(str string) bool {
+	_, err := url.ParseRequestURI(str)
+	return err == nil
+}

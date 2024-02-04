@@ -1,6 +1,7 @@
 package include
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -45,7 +46,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includeDir := filepath.Dir(absPath)
 
-	if err := t.rewriteLinks(includedNode, includeDir); err != nil {
+	if err := t.rewriteLocalLinks(includedNode, includeDir); err != nil {
 		panic(errors.Wrapf(err, "could not rewrite links of included markdown file '%s'", absPath))
 	}
 
@@ -59,7 +60,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	}
 }
 
-func (t *NodeTransformer) rewriteLinks(root ast.Node, includeDir string) error {
+func (t *NodeTransformer) rewriteLocalLinks(root ast.Node, includeDir string) error {
 	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
@@ -68,6 +69,10 @@ func (t *NodeTransformer) rewriteLinks(root ast.Node, includeDir string) error {
 		switch n := node.(type) {
 		case *ast.Image:
 			destination := string(n.Destination)
+
+			if isURL(destination) {
+				return ast.WalkContinue, nil
+			}
 
 			if !filepath.IsAbs(destination) {
 				destination = filepath.Join(includeDir, destination)
@@ -95,3 +100,8 @@ func (t *NodeTransformer) rewriteLinks(root ast.Node, includeDir string) error {
 }
 
 var _ directive.NodeTransformer = &NodeTransformer{}
+
+func isURL(str string) bool {
+	_, err := url.ParseRequestURI(str)
+	return err == nil
+}
