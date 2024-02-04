@@ -1,4 +1,4 @@
-name: amatl-ci
+name: check
 
 on:
   push:
