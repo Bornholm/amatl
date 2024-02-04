@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"go/format"
 	"io"
-	"strconv"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
-	extAST "github.com/yuin/goldmark/extension/ast"
 	"github.com/yuin/goldmark/renderer"
 )
 
@@ -43,6 +40,22 @@ type Renderer struct {
 	// language name => format function
 	formatters map[string]func([]byte) []byte
 	renderers  map[ast.NodeKind]NodeRenderer
+}
+
+func (r *Renderer) Formatters() map[string]func([]byte) []byte {
+	return r.formatters
+}
+
+func (r *Renderer) UnderlineHeadings() bool {
+	return r.underlineHeadings
+}
+
+func (r *Renderer) SoftWraps() bool {
+	return r.softWraps
+}
+
+func (r *Renderer) ListIndentStyle() ListIndentStyle {
+	return r.listIndentStyle
 }
 
 type NodeRenderer interface {
@@ -91,6 +104,19 @@ func WithNodeRenderer(kind ast.NodeKind, renderer NodeRenderer) Option {
 		}
 
 		r.renderers[kind] = renderer
+	})
+}
+
+// WithNodeRenderer configures the renderer to use the given renderers for the nodes of the mapped kind.
+func WithNodeRenderers(renderers map[ast.NodeKind]NodeRenderer) Option {
+	return optionFunc(func(r *Renderer) {
+		if r.renderers == nil {
+			r.renderers = make(map[ast.NodeKind]NodeRenderer)
+		}
+
+		for kind, renderer := range renderers {
+			r.renderers[kind] = renderer
+		}
 	})
 }
 
@@ -276,11 +302,11 @@ func NewRenderer() *Renderer {
 		// Leave strongToken as nil by default.
 		// At render time, we'll use what was specified,
 		// or repeat emphToken twice to get the strong token.
-		renderers: DefaultRenderers(),
+		renderers: make(map[ast.NodeKind]NodeRenderer),
 	}
 }
 
-func (mr *Renderer) newRender(w io.Writer, source []byte) *Render {
+func (mr *Renderer) NewRender(w io.Writer, source []byte) *Render {
 	strongToken := mr.strongToken
 	if len(strongToken) == 0 {
 		strongToken = bytes.Repeat(mr.emphToken, 2)
@@ -301,32 +327,10 @@ func (mr *Renderer) newRender(w io.Writer, source []byte) *Render {
 // NOTE: This is the entry point used by Goldmark.
 func (mr *Renderer) Render(w io.Writer, source []byte, node ast.Node) error {
 	// Perform DFS.
-	return ast.Walk(node, mr.newRender(w, source).renderNode)
+	return ast.Walk(node, mr.NewRender(w, source).RenderNode)
 }
 
-func (r *Render) renderNode(node ast.Node, entering bool) (ast.WalkStatus, error) {
-	if entering && node.PreviousSibling() != nil {
-		switch node.(type) {
-		// All Block types (except few) usually have 2x new lines before itself when they are non-first siblings.
-		case *ast.Paragraph, *ast.Heading, *ast.FencedCodeBlock,
-			*ast.CodeBlock, *ast.ThematicBreak, *extAST.Table,
-			*ast.Blockquote:
-			_, _ = r.w.Write(NewLineChar)
-			_, _ = r.w.Write(NewLineChar)
-		case *ast.List, *ast.HTMLBlock:
-			_, _ = r.w.Write(NewLineChar)
-			if node.HasBlankPreviousLines() {
-				_, _ = r.w.Write(NewLineChar)
-			}
-		case *ast.ListItem:
-			// TODO(bwplotka): Handle tight/loose rule explicitly.
-			// See: https://github.github.com/gfm/#loose
-			if node.HasBlankPreviousLines() {
-				_, _ = r.w.Write(NewLineChar)
-			}
-		}
-	}
-
+func (r *Render) RenderNode(node ast.Node, entering bool) (ast.WalkStatus, error) {
 	kind := node.Kind()
 	renderer, exists := r.mr.renderers[kind]
 	if !exists {
@@ -334,71 +338,4 @@ func (r *Render) renderNode(node ast.Node, entering bool) (ast.WalkStatus, error
 	}
 
 	return renderer.Render(r, node, entering)
-}
-
-func listItemMarkerChars(tnode *ast.ListItem) []byte {
-	parList := tnode.Parent().(*ast.List)
-	if parList.IsOrdered() {
-		cnt := 1
-		if parList.Start != 0 {
-			cnt = parList.Start
-		}
-		s := tnode.PreviousSibling()
-		for s != nil {
-			cnt++
-			s = s.PreviousSibling()
-		}
-		return append(strconv.AppendInt(nil, int64(cnt), 10), parList.Marker, ' ')
-	}
-	return []byte{parList.Marker, SpaceChar[0]}
-}
-
-func noAllocString(buf []byte) string {
-	return *(*string)(unsafe.Pointer(&buf))
-}
-
-// writeClean writes the given byte slice to the writer
-// replacing consecutive spaces, newlines, and tabs
-// with single spaces.
-func writeClean(w io.Writer, bs []byte) error {
-	// This works by scanning the byte slice,
-	// and writing sub-slices of bs
-	// as we see and skip blank sections.
-
-	var (
-		// Start of the current sub-slice to be written.
-		startIdx int
-		// Normalized last character we saw:
-		// for whitespace, this is ' ',
-		// for everything else, it's left as-is.
-		p byte
-	)
-
-	for idx, q := range bs {
-		if q == '\n' || q == '\r' || q == '\t' {
-			q = ' '
-		}
-
-		if q == ' ' {
-			if p != ' ' {
-				// Going from non-blank to blank.
-				// Write the current sub-slice and the blank.
-				if _, err := w.Write(bs[startIdx:idx]); err != nil {
-					return err
-				}
-				if _, err := w.Write(SpaceChar); err != nil {
-					return err
-				}
-			}
-			startIdx = idx + 1
-		} else if p == ' ' {
-			// Going from blank to non-blank.
-			// Start a new sub-slice.
-			startIdx = idx
-		}
-		p = q
-	}
-
-	_, err := w.Write(bs[startIdx:])
-	return err
 }

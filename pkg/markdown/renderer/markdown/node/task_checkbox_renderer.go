@@ -1,6 +1,7 @@
-package markdown
+package node
 
 import (
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	extAST "github.com/yuin/goldmark/extension/ast"
@@ -10,7 +11,7 @@ type TaskCheckboxRenderer struct {
 }
 
 // Render implements NodeRenderer.
-func (*TaskCheckboxRenderer) Render(r *Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (*TaskCheckboxRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	taskCheckbox, ok := node.(*extAST.TaskCheckBox)
 	if !ok {
 		return ast.WalkStop, errors.Errorf("expected *extAST.TaskCheckBox, got '%T'", node)
@@ -21,13 +22,13 @@ func (*TaskCheckboxRenderer) Render(r *Render, node ast.Node, entering bool) (as
 	}
 
 	if taskCheckbox.IsChecked {
-		_, _ = r.w.Write([]byte("[X] "))
+		_, _ = r.Writer().Write([]byte("[X] "))
 		return ast.WalkContinue, nil
 	}
 
-	_, _ = r.w.Write([]byte("[ ] "))
+	_, _ = r.Writer().Write([]byte("[ ] "))
 
 	return ast.WalkContinue, nil
 }
 
-var _ NodeRenderer = &TaskCheckboxRenderer{}
+var _ markdown.NodeRenderer = &TaskCheckboxRenderer{}

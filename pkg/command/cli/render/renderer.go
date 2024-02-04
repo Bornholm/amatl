@@ -12,6 +12,7 @@ import (
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 
 	mermaidRenderer "github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/mermaid"
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/node"
 	"go.abhg.dev/goldmark/mermaid"
 )
 
@@ -32,6 +33,7 @@ func newMarkdownRenderer() renderer.Renderer {
 				), 0,
 			),
 		),
+		markdown.WithNodeRenderers(node.Renderers()),
 		markdown.WithNodeRenderer(
 			directive.KindDirective,
 			directive.NewMarkdownNodeRenderer(

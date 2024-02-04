@@ -1,8 +1,9 @@
-package markdown
+package node
 
 import (
 	"bytes"
 
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 )
@@ -11,7 +12,7 @@ type EmphasisRenderer struct {
 }
 
 // Render implements NodeRenderer.
-func (*EmphasisRenderer) Render(r *Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (*EmphasisRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	emphasis, ok := node.(*ast.Emphasis)
 	if !ok {
 		return ast.WalkStop, errors.Errorf("expected *ast.Emphasis, got '%T'", node)
@@ -20,14 +21,14 @@ func (*EmphasisRenderer) Render(r *Render, node ast.Node, entering bool) (ast.Wa
 	var emWrapper []byte
 	switch emphasis.Level {
 	case 1:
-		emWrapper = r.emphToken
+		emWrapper = r.EmphToken()
 	case 2:
-		emWrapper = r.strongToken
+		emWrapper = r.StrongToken()
 	default:
-		emWrapper = bytes.Repeat(r.emphToken, emphasis.Level)
+		emWrapper = bytes.Repeat(r.EmphToken(), emphasis.Level)
 	}
 
 	return r.WrapNonEmptyContentWith(emWrapper, entering), nil
 }
 
-var _ NodeRenderer = &EmphasisRenderer{}
+var _ markdown.NodeRenderer = &EmphasisRenderer{}

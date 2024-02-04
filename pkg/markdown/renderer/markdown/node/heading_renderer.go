@@ -1,10 +1,11 @@
-package markdown
+package node
 
 import (
 	"bytes"
 	"fmt"
 	"sort"
 
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/mattn/go-runewidth"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
@@ -14,7 +15,7 @@ type HeadingRenderer struct {
 }
 
 // Render implements NodeRenderer.
-func (hr *HeadingRenderer) Render(r *Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (hr *HeadingRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	heading, ok := node.(*ast.Heading)
 	if !ok {
 		return ast.WalkStop, errors.Errorf("expected *ast.Heading, got '%T'", node)
@@ -32,15 +33,15 @@ func (hr *HeadingRenderer) Render(r *Render, node ast.Node, entering bool) (ast.
 	return ast.WalkSkipChildren, nil
 }
 
-func (hr *HeadingRenderer) renderHeading(r *Render, node *ast.Heading) error {
+func (hr *HeadingRenderer) renderHeading(r *markdown.Render, node *ast.Heading) error {
 	underlineHeading := false
-	if r.mr.underlineHeadings {
+	if r.Renderer().UnderlineHeadings() {
 		underlineHeading = node.Level <= 2
 	}
 
 	if !underlineHeading {
-		r.w.Write(bytes.Repeat([]byte{'#'}, node.Level))
-		r.w.Write(SpaceChar)
+		r.Writer().Write(bytes.Repeat([]byte{'#'}, node.Level))
+		r.Writer().Write(markdown.SpaceChar)
 	}
 
 	var headBuf bytes.Buffer
@@ -49,7 +50,7 @@ func (hr *HeadingRenderer) renderHeading(r *Render, node *ast.Heading) error {
 	for n := node.FirstChild(); n != nil; n = n.NextSibling() {
 		if err := ast.Walk(n, func(inner ast.Node, entering bool) (ast.WalkStatus, error) {
 			if entering {
-				if err := ast.Walk(inner, r.mr.newRender(&headBuf, r.source).renderNode); err != nil {
+				if err := ast.Walk(inner, r.Renderer().NewRender(&headBuf, r.Source()).RenderNode); err != nil {
 					return ast.WalkStop, err
 				}
 			}
@@ -92,22 +93,22 @@ func (hr *HeadingRenderer) renderHeading(r *Render, node *ast.Heading) error {
 	// 	_, _ = fmt.Fprintf(&headBuf, " {%s}", strings.Join(hAttr, " "))
 	// }
 
-	_, _ = r.w.Write(headBuf.Bytes())
+	_, _ = r.Writer().Write(headBuf.Bytes())
 
 	if underlineHeading {
 		width := runewidth.StringWidth(headBuf.String())
 
-		_, _ = r.w.Write(NewLineChar)
+		_, _ = r.Writer().Write(markdown.NewLineChar)
 
 		switch node.Level {
 		case 1:
-			r.w.Write(bytes.Repeat(Heading1UnderlineChar, width))
+			r.Writer().Write(bytes.Repeat(markdown.Heading1UnderlineChar, width))
 		case 2:
-			r.w.Write(bytes.Repeat(Heading2UnderlineChar, width))
+			r.Writer().Write(bytes.Repeat(markdown.Heading2UnderlineChar, width))
 		}
 	}
 
 	return nil
 }
 
-var _ NodeRenderer = &HeadingRenderer{}
+var _ markdown.NodeRenderer = &HeadingRenderer{}

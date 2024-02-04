@@ -1,9 +1,10 @@
-package markdown
+package node
 
 import (
 	"bytes"
 	"fmt"
 
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/mattn/go-runewidth"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
@@ -14,7 +15,7 @@ type TableRenderer struct {
 }
 
 // Render implements NodeRenderer.
-func (tr *TableRenderer) Render(r *Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (tr *TableRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	if !entering {
 		return ast.WalkContinue, nil
 	}
@@ -33,7 +34,7 @@ func (tr *TableRenderer) Render(r *Render, node ast.Node, entering bool) (ast.Wa
 	return ast.WalkSkipChildren, nil
 }
 
-func (tr *TableRenderer) renderTable(r *Render, node *extAST.Table) error {
+func (tr *TableRenderer) renderTable(r *markdown.Render, node *extAST.Table) error {
 	var (
 		columnAligns []extAST.Alignment
 		columnWidths []int
@@ -56,7 +57,7 @@ func (tr *TableRenderer) renderTable(r *Render, node *extAST.Table) error {
 					}
 
 					cellBuf.Reset()
-					if err := ast.Walk(tnode, r.mr.newRender(&cellBuf, r.source).renderNode); err != nil {
+					if err := ast.Walk(tnode, r.Renderer().NewRender(&cellBuf, r.Source()).RenderNode); err != nil {
 						return ast.WalkStop, err
 					}
 					width := runewidth.StringWidth(cellBuf.String())
@@ -84,36 +85,36 @@ func (tr *TableRenderer) renderTable(r *Render, node *extAST.Table) error {
 			case *extAST.TableRow:
 				if entering {
 					colIndex = 0
-					_, _ = r.w.Write(NewLineChar)
+					_, _ = r.Writer().Write(markdown.NewLineChar)
 					break
 				}
 
-				_, _ = r.w.Write([]byte("|"))
+				_, _ = r.Writer().Write([]byte("|"))
 			case *extAST.TableHeader:
 				if entering {
 					colIndex = 0
 					break
 				}
 
-				_, _ = r.w.Write([]byte("|\n"))
+				_, _ = r.Writer().Write([]byte("|\n"))
 				for i, align := range columnAligns {
-					_, _ = r.w.Write([]byte{'|'})
+					_, _ = r.Writer().Write([]byte{'|'})
 					width := columnWidths[i]
 
-					left, right := TableHeaderColChar, TableHeaderColChar
+					left, right := markdown.TableHeaderColChar, markdown.TableHeaderColChar
 					switch align {
 					case extAST.AlignLeft:
-						left = TableHeaderAlignColChar
+						left = markdown.TableHeaderAlignColChar
 					case extAST.AlignRight:
-						right = TableHeaderAlignColChar
+						right = markdown.TableHeaderAlignColChar
 					case extAST.AlignCenter:
-						left, right = TableHeaderAlignColChar, TableHeaderAlignColChar
+						left, right = markdown.TableHeaderAlignColChar, markdown.TableHeaderAlignColChar
 					}
-					_, _ = r.w.Write(left)
-					_, _ = r.w.Write(bytes.Repeat(TableHeaderColChar, width))
-					_, _ = r.w.Write(right)
+					_, _ = r.Writer().Write(left)
+					_, _ = r.Writer().Write(bytes.Repeat(markdown.TableHeaderColChar, width))
+					_, _ = r.Writer().Write(right)
 				}
-				_, _ = r.w.Write([]byte("|"))
+				_, _ = r.Writer().Write([]byte("|"))
 			case *extAST.TableCell:
 				if !entering {
 					break
@@ -127,28 +128,28 @@ func (tr *TableRenderer) renderTable(r *Render, node *extAST.Table) error {
 				}
 
 				cellBuf.Reset()
-				if err := ast.Walk(tnode, r.mr.newRender(&cellBuf, r.source).renderNode); err != nil {
+				if err := ast.Walk(tnode, r.Renderer().NewRender(&cellBuf, r.Source()).RenderNode); err != nil {
 					return ast.WalkStop, err
 				}
 
-				_, _ = r.w.Write([]byte("| "))
+				_, _ = r.Writer().Write([]byte("| "))
 				whitespaceWidth := width - runewidth.StringWidth(cellBuf.String())
 				switch align {
 				default:
 					fallthrough
 				case extAST.AlignLeft:
-					_, _ = r.w.Write(cellBuf.Bytes())
-					_, _ = r.w.Write(bytes.Repeat([]byte{' '}, 1+whitespaceWidth))
+					_, _ = r.Writer().Write(cellBuf.Bytes())
+					_, _ = r.Writer().Write(bytes.Repeat([]byte{' '}, 1+whitespaceWidth))
 				case extAST.AlignCenter:
 					first := whitespaceWidth / 2
-					_, _ = r.w.Write(bytes.Repeat([]byte{' '}, first))
-					_, _ = r.w.Write(cellBuf.Bytes())
-					_, _ = r.w.Write(bytes.Repeat([]byte{' '}, whitespaceWidth-first))
-					_, _ = r.w.Write([]byte{' '})
+					_, _ = r.Writer().Write(bytes.Repeat([]byte{' '}, first))
+					_, _ = r.Writer().Write(cellBuf.Bytes())
+					_, _ = r.Writer().Write(bytes.Repeat([]byte{' '}, whitespaceWidth-first))
+					_, _ = r.Writer().Write([]byte{' '})
 				case extAST.AlignRight:
-					_, _ = r.w.Write(bytes.Repeat([]byte{' '}, whitespaceWidth))
-					_, _ = r.w.Write(cellBuf.Bytes())
-					_, _ = r.w.Write([]byte{' '})
+					_, _ = r.Writer().Write(bytes.Repeat([]byte{' '}, whitespaceWidth))
+					_, _ = r.Writer().Write(cellBuf.Bytes())
+					_, _ = r.Writer().Write([]byte{' '})
 				}
 				colIndex++
 				return ast.WalkSkipChildren, nil
@@ -163,4 +164,4 @@ func (tr *TableRenderer) renderTable(r *Render, node *extAST.Table) error {
 	return nil
 }
 
-var _ NodeRenderer = &TableRenderer{}
+var _ markdown.NodeRenderer = &TableRenderer{}

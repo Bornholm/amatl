@@ -1,6 +1,7 @@
-package markdown
+package node
 
 import (
+	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 )
@@ -9,19 +10,19 @@ type CodeSpanRenderer struct {
 }
 
 // Render implements NodeRenderer.
-func (*CodeSpanRenderer) Render(r *Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
+func (*CodeSpanRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (ast.WalkStatus, error) {
 	_, ok := node.(*ast.CodeSpan)
 	if !ok {
 		return ast.WalkStop, errors.Errorf("expected *ast.CodeSpan, got '%T'", node)
 	}
 
 	if entering {
-		_, _ = r.w.Write([]byte{'`'})
+		_, _ = r.Writer().Write([]byte{'`'})
 		return ast.WalkContinue, nil
 	}
 
-	_, _ = r.w.Write([]byte{'`'})
+	_, _ = r.Writer().Write([]byte{'`'})
 	return ast.WalkContinue, nil
 }
 
-var _ NodeRenderer = &CodeSpanRenderer{}
+var _ markdown.NodeRenderer = &CodeSpanRenderer{}
