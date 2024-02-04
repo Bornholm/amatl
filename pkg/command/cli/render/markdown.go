@@ -20,7 +20,18 @@ func Markdown() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			vars, err := getVars(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			pipeline := pipeline.New(
+				ToggleableTransformer(
+					TemplateTransformer(
+						WithVars(vars),
+					),
+					hasVars(ctx),
+				),
 				MarkdownTransformer(
 					WithBaseDir(dirname),
 					WithToc(isTocEnabled(ctx)),

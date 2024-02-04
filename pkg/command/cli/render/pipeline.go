@@ -3,15 +3,73 @@ package render
 import (
 	"bytes"
 	"context"
+	"html/template"
 	"sync"
 
 	"github.com/Bornholm/amatl/pkg/html"
 	"github.com/Bornholm/amatl/pkg/pipeline"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/text"
 )
+
+type TemplateTransformerOptions struct {
+	Vars  map[string]any
+	Funcs template.FuncMap
+}
+
+type TemplateTransformerOptionFunc func(opts *TemplateTransformerOptions)
+
+func NewTemplateTransformerOptions(funcs ...TemplateTransformerOptionFunc) *TemplateTransformerOptions {
+	opts := &TemplateTransformerOptions{
+		Vars:  map[string]any{},
+		Funcs: sprig.FuncMap(),
+	}
+	for _, fn := range funcs {
+		fn(opts)
+	}
+	return opts
+}
+
+func WithVars(vars map[string]any) TemplateTransformerOptionFunc {
+	return func(opts *TemplateTransformerOptions) {
+		for key, value := range vars {
+			opts.Vars[key] = value
+		}
+	}
+}
+
+func WithFuncs(funcs template.FuncMap) TemplateTransformerOptionFunc {
+	return func(opts *TemplateTransformerOptions) {
+		opts.Funcs = funcs
+	}
+}
+
+func TemplateTransformer(funcs ...TemplateTransformerOptionFunc) pipeline.Transformer {
+	opts := NewTemplateTransformerOptions(funcs...)
+	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
+		tmpl, err := template.New("").Funcs(opts.Funcs).Parse(string(input))
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		var buf bytes.Buffer
+
+		data := struct {
+			Vars map[string]any
+		}{
+			Vars: opts.Vars,
+		}
+
+		if err := tmpl.Execute(&buf, data); err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return buf.Bytes(), nil
+	})
+}
 
 type MarkdownTransformerOptions struct {
 	BaseDir string
@@ -247,4 +305,19 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 
 func centimetersToInches(cm float64) float64 {
 	return cm / 2.54
+}
+
+func ToggleableTransformer(t pipeline.Transformer, enabled bool) pipeline.Transformer {
+	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
+		if !enabled {
+			return input, nil
+		}
+
+		output, err := t.Transform(ctx, input)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
+		return output, nil
+	})
 }

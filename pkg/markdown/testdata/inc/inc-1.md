@@ -3,3 +3,6 @@
 Hello World! 
 
 ![](./aztec1.png)
+
+
+### Templatized title: {{ .Vars.Subtitle }}

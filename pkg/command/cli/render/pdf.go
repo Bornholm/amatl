@@ -20,6 +20,11 @@ func PDF() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			vars, err := getVars(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			layoutVars, err := getHTMLLayoutVars(ctx)
 			if err != nil {
 				return errors.WithStack(err)
@@ -34,6 +39,12 @@ func PDF() *cli.Command {
 				MarkdownTransformer(
 					WithBaseDir(dirname),
 					WithToc(false),
+				),
+				ToggleableTransformer(
+					TemplateTransformer(
+						WithVars(vars),
+					),
+					hasVars(ctx),
 				),
 				// Render the consolidated document
 				// as HTML

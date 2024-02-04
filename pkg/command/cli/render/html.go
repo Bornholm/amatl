@@ -25,12 +25,23 @@ func HTML() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			vars, err := getVars(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			pipeline := pipeline.New(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
 				MarkdownTransformer(
 					WithBaseDir(dirname),
 					WithToc(false),
+				),
+				ToggleableTransformer(
+					TemplateTransformer(
+						WithVars(vars),
+					),
+					hasVars(ctx),
 				),
 				// Render the consolidated document
 				// as HTML

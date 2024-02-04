@@ -14,6 +14,7 @@ import (
 
 const (
 	paramToc             = "toc"
+	paramVars            = "vars"
 	paramHTMLLayout      = "html-layout"
 	paramHTMLLayoutVars  = "html-layout-vars"
 	paramPDFMarginTop    = "pdf-margin-top"
@@ -27,6 +28,11 @@ var (
 	flagToc = &cli.BoolFlag{
 		Name:  paramToc,
 		Value: false,
+	}
+	flagVars = &cli.StringFlag{
+		Name:  paramVars,
+		Value: "{}",
+		Usage: "enable templating and use vars as injected data",
 	}
 	flagHTMLLayout = &cli.StringFlag{
 		Name:  paramHTMLLayout,
@@ -68,6 +74,21 @@ func isTocEnabled(ctx *cli.Context) bool {
 	return ctx.Bool(paramToc)
 }
 
+func getVars(ctx *cli.Context) (map[string]any, error) {
+	rawVars := ctx.String(paramVars)
+
+	var vars map[string]any
+	if err := json.Unmarshal([]byte(rawVars), &vars); err != nil {
+		return nil, errors.Wrap(err, "could not parse vars")
+	}
+
+	return vars, nil
+}
+
+func hasVars(ctx *cli.Context) bool {
+	return ctx.IsSet(paramVars)
+}
+
 func getHTMLLayout(ctx *cli.Context) string {
 	return ctx.String(paramHTMLLayout)
 }
@@ -86,6 +107,7 @@ func getHTMLLayoutVars(ctx *cli.Context) (map[string]any, error) {
 func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	return append([]cli.Flag{
 		flagToc,
+		flagVars,
 	}, flags...)
 }
 
