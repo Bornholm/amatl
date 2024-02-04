@@ -9,6 +9,7 @@ require (
 	github.com/chromedp/chromedp v0.9.4
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.27.1
+	github.com/vincent-petithory/dataurl v1.0.0
 	github.com/yuin/goldmark v1.6.0
 	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20230729083705-37449abec8cc
 	go.abhg.dev/goldmark/mermaid v0.5.0

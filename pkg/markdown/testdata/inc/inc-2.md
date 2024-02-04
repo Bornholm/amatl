@@ -12,3 +12,5 @@ Liste à puces imbriquée dans une liste ordonnée:
 Liste à cocher:
  - [ ] Case non cochée
  - [x] Case cochée
+
+![](./aztec2.png)

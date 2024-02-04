@@ -45,7 +45,7 @@ func MarkdownTransformer(funcs ...MarkdownTransformerOptionFunc) pipeline.Transf
 	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
 		reader := text.NewReader(input)
 
-		parse := newParser(opts.BaseDir, opts.WithToc)
+		parse := newParser(opts.BaseDir, opts.WithToc, false)
 		render := newMarkdownRenderer()
 
 		document := parse.Parse(reader)
@@ -102,7 +102,7 @@ func HTMLTransformer(funcs ...HTMLTransformerOptionFunc) pipeline.Transformer {
 	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
 		reader := text.NewReader(input)
 
-		parser := newParser(opts.BaseDir, opts.WithToc)
+		parser := newParser(opts.BaseDir, opts.WithToc, true)
 		document := parser.Parse(reader)
 
 		render := newHTMLRenderer()

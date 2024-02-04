@@ -2,11 +2,11 @@
 
 I include sub-documents
 
-:include{foo="bar" path="./inc-1.md"}
+:include{path="./inc/inc-1.md"}
 
 ---
 
-:include{path="./inc-2.md"}
+:include{path="./inc/inc-2.md"}
 
 :dummy
 

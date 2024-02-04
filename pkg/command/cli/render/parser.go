@@ -1,6 +1,7 @@
 package render
 
 import (
+	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/yuin/goldmark"
@@ -15,7 +16,7 @@ var (
 	cache = include.NewSourceCache()
 )
 
-func newParser(baseDir string, withToC bool) parser.Parser {
+func newParser(baseDir string, withToC bool, embedLinkedResources bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -57,6 +58,16 @@ func newParser(baseDir string, withToC bool) parser.Parser {
 				util.Prioritized(&toc.Transformer{
 					Title: "Table of content",
 				}, 100),
+			),
+		)
+	}
+
+	if embedLinkedResources {
+		parse.AddOptions(
+			parser.WithASTTransformers(
+				util.Prioritized(&dataurl.Transformer{
+					Cwd: baseDir,
+				}, 999),
 			),
 		)
 	}

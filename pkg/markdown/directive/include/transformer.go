@@ -43,6 +43,12 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	includedReader := text.NewReader(includedSource)
 	includedNode := t.Parser.Parse(includedReader)
 
+	includeDir := filepath.Dir(absPath)
+
+	if err := t.rewriteLinks(includedNode, includeDir); err != nil {
+		panic(errors.Wrapf(err, "could not rewrite links of included markdown file '%s'", absPath))
+	}
+
 	t.Cache.Set(path, includedSource, includedNode)
 
 	parent := node.Parent()
@@ -51,6 +57,41 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		parent.RemoveChild(parent, node)
 		grandparent.ReplaceChild(grandparent, parent, node)
 	}
+}
+
+func (t *NodeTransformer) rewriteLinks(root ast.Node, includeDir string) error {
+	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+
+		switch n := node.(type) {
+		case *ast.Image:
+			destination := string(n.Destination)
+
+			if !filepath.IsAbs(destination) {
+				destination = filepath.Join(includeDir, destination)
+
+				newDestination, err := filepath.Rel(t.BasePath, destination)
+				if err != nil {
+					return ast.WalkStop, errors.WithStack(err)
+				}
+
+				destination = newDestination
+			}
+
+			n.Destination = []byte(destination)
+		default:
+			return ast.WalkContinue, nil
+		}
+
+		return ast.WalkContinue, nil
+	})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 var _ directive.NodeTransformer = &NodeTransformer{}
