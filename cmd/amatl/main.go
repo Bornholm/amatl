@@ -8,7 +8,7 @@ import (
 func main() {
 	command.Main(
 		"amatl",
-		"",
+		"a markdown to markdown/html/pdf compiler",
 		cli.Root().Subcommands...,
 	)
 }
