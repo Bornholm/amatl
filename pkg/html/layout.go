@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	// Register layout resolvers
-	_ "github.com/Bornholm/amatl/pkg/html/layout/embed"
+	_ "github.com/Bornholm/amatl/pkg/html/layout/base"
 	_ "github.com/Bornholm/amatl/pkg/html/layout/file"
 )
 
@@ -50,7 +50,7 @@ type LayoutOptions struct {
 
 type LayoutOptionFunc func(opts *LayoutOptions)
 
-const DefaultLayoutURL = "embed://document.html"
+const DefaultLayoutURL = "base://document.html"
 
 func NewLayoutOptions(funcs ...LayoutOptionFunc) *LayoutOptions {
 	opts := &LayoutOptions{

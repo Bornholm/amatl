@@ -1,4 +1,4 @@
-package embed
+package base
 
 import (
 	"embed"
@@ -28,7 +28,7 @@ func Available() []string {
 	available := make([]string, 0, len(filenames))
 
 	for _, f := range filenames {
-		available = append(available, fmt.Sprintf("embed://%s", filepath.Base(f)))
+		available = append(available, fmt.Sprintf("base://%s", filepath.Base(f)))
 	}
 
 	return available
@@ -41,7 +41,7 @@ type Resolver struct {
 func (*Resolver) Resolve(url *url.URL, funcs template.FuncMap) (*template.Template, error) {
 	templates, err := template.New("").Funcs(funcs).ParseFS(templateFs, templatePattern)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse embedded templates")
+		return nil, errors.Wrap(err, "could not parse base templates")
 	}
 
 	name := url.Host

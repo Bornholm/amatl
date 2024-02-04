@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/Bornholm/amatl/pkg/html"
-	"github.com/Bornholm/amatl/pkg/html/layout/embed"
+	"github.com/Bornholm/amatl/pkg/html/layout/base"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -31,7 +31,7 @@ var (
 	flagHTMLLayout = &cli.StringFlag{
 		Name:  paramHTMLLayout,
 		Value: html.DefaultLayoutURL,
-		Usage: fmt.Sprintf("html layout to use, embedded: %v", embed.Available()),
+		Usage: fmt.Sprintf("html layout to use, embedded: %v", base.Available()),
 	}
 	flagHTMLLayoutVars = &cli.StringFlag{
 		Name:  paramHTMLLayoutVars,

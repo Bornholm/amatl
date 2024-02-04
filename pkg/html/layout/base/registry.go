@@ -1,7 +1,7 @@
-package embed
+package base
 
 import "github.com/Bornholm/amatl/pkg/html/layout"
 
 func init() {
-	layout.Register("embed", NewResolver())
+	layout.Register("base", NewResolver())
 }
