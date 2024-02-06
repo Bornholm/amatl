@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./misc/resources/logo.svg" style="height:150px" />
+</p>
+
 # `amatl`
 
 Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged documents from the command line.
