@@ -12,6 +12,25 @@ Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](h
 > 
 > Source: [Wikipédia](https://en.wikipedia.org/wiki/Amate)
 
+## Features
+
+- Transform your Markdown to (formatted) Markdown, HTML or PDF (with the help of Chromium/Chrome), directly from the command line;
+- Integrate [MermaidJS](https://mermaid.js.org/) diagrams et code blocks with syntax highlighting;
+- Use [custom directives](./doc/directives/README.md) to include others documents or generate tables of content;
+- Use [pre-defined or custom layouts](./doc/layouts/README.md) to transform your content into presentations, report, etc;
+- Use [Go templating](./doc/templating/README.md) to inject dynamic data into your document.
+
+## How to use
+
+1. Download [the latest release](https://github.com/Bornholm/amatl/releases/latest) of `amatl`
+2. In your terminal, start transforming your documents to HTML:
+
+  ```shell
+  amatl render html my-doc.md
+  ```
+
+See [`./doc`](./doc/README.md) for more informations.
+
 ## Licence
 
 [MIT](./LICENCE)
