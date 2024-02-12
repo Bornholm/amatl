@@ -14,7 +14,7 @@ Each directive triggers a specific behavior based on its type.
 
 ## Available directives
 
-### `:include{path="<path>"}`
+### `:include{url="<url>"}`
 
 Include another Markdown file in your document.
 
