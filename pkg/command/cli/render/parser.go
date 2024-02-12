@@ -1,6 +1,8 @@
 package render
 
 import (
+	"net/url"
+
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
@@ -16,7 +18,7 @@ var (
 	cache = include.NewSourceCache()
 )
 
-func newParser(baseDir string, withToC bool, embedLinkedResources bool) parser.Parser {
+func newParser(SourceURL *url.URL, withToC bool, embedLinkedResources bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -41,9 +43,9 @@ func newParser(baseDir string, withToC bool, embedLinkedResources bool) parser.P
 					directive.WithTransformer(
 						include.Type,
 						&include.NodeTransformer{
-							BasePath: baseDir,
-							Cache:    cache,
-							Parser:   parse,
+							SourceURL: SourceURL,
+							Cache:     cache,
+							Parser:    parse,
 						},
 					),
 				),
@@ -65,9 +67,7 @@ func newParser(baseDir string, withToC bool, embedLinkedResources bool) parser.P
 	if embedLinkedResources {
 		parse.AddOptions(
 			parser.WithASTTransformers(
-				util.Prioritized(&dataurl.Transformer{
-					Cwd: baseDir,
-				}, 999),
+				util.Prioritized(&dataurl.Transformer{}, 999),
 			),
 		)
 	}

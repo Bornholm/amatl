@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 	"html/template"
+	"net/url"
 	"sync"
 
-	"github.com/Bornholm/amatl/pkg/html"
+	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
@@ -72,8 +73,8 @@ func TemplateTransformer(funcs ...TemplateTransformerOptionFunc) pipeline.Transf
 }
 
 type MarkdownTransformerOptions struct {
-	BaseDir string
-	WithToc bool
+	SourceURL *url.URL
+	WithToc   bool
 }
 
 type MarkdownTransformerOptionFunc func(opts *MarkdownTransformerOptions)
@@ -86,9 +87,9 @@ func NewMarkdownTransformerOptions(funcs ...MarkdownTransformerOptionFunc) *Mark
 	return opts
 }
 
-func WithBaseDir(baseDir string) MarkdownTransformerOptionFunc {
+func WithSourceURL(sourceURL *url.URL) MarkdownTransformerOptionFunc {
 	return func(opts *MarkdownTransformerOptions) {
-		opts.BaseDir = baseDir
+		opts.SourceURL = sourceURL
 	}
 }
 
@@ -103,7 +104,7 @@ func MarkdownTransformer(funcs ...MarkdownTransformerOptionFunc) pipeline.Transf
 	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
 		reader := text.NewReader(input)
 
-		parse := newParser(opts.BaseDir, opts.WithToc, false)
+		parse := newParser(opts.SourceURL, opts.WithToc, false)
 		render := newMarkdownRenderer()
 
 		document := parse.Parse(reader)
@@ -134,7 +135,7 @@ func WithMarkdownTransformerOptions(funcs ...MarkdownTransformerOptionFunc) HTML
 func NewHTMLTransformerOptions(funcs ...HTMLTransformerOptionFunc) *HTMLTransformerOptions {
 	opts := &HTMLTransformerOptions{
 		MarkdownTransformerOptions: NewMarkdownTransformerOptions(),
-		LayoutURL:                  html.DefaultLayoutURL,
+		LayoutURL:                  layout.DefaultRawURL,
 		LayoutVars:                 make(map[string]any),
 	}
 	for _, fn := range funcs {
@@ -160,7 +161,7 @@ func HTMLTransformer(funcs ...HTMLTransformerOptionFunc) pipeline.Transformer {
 	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
 		reader := text.NewReader(input)
 
-		parser := newParser(opts.BaseDir, opts.WithToc, true)
+		parser := newParser(opts.SourceURL, opts.WithToc, true)
 		document := parser.Parse(reader)
 
 		render := newHTMLRenderer()
@@ -170,18 +171,18 @@ func HTMLTransformer(funcs ...HTMLTransformerOptionFunc) pipeline.Transformer {
 			return nil, errors.WithStack(err)
 		}
 
-		var layout bytes.Buffer
+		var doc bytes.Buffer
 
-		err := html.Layout(
-			&layout, body.Bytes(),
-			html.WithLayout(opts.LayoutURL),
-			html.WithVars(opts.LayoutVars),
+		err := layout.Render(
+			ctx, &doc, body.Bytes(),
+			layout.WithURL(opts.LayoutURL),
+			layout.WithVars(opts.LayoutVars),
 		)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
 
-		return layout.Bytes(), nil
+		return doc.Bytes(), nil
 	})
 }
 

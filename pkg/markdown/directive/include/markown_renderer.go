@@ -15,19 +15,14 @@ type MarkdownRenderer struct {
 
 // Render implements markdown.NodeRenderer.
 func (mr *MarkdownRenderer) Render(r *markdown.Render, directive *directive.Node, entering bool) (ast.WalkStatus, error) {
-	rawPath, exists := directive.AttributeString("path")
-	if !exists {
-		return ast.WalkStop, errors.Errorf("could not find 'path' attribute in directive '%s'", directive.Kind())
+	rawURL, err := getNodeURLAttribute(directive)
+	if err != nil {
+		return ast.WalkStop, errors.WithStack(err)
 	}
 
-	path, ok := rawPath.(string)
-	if !ok {
-		panic(errors.Errorf("unexpected type '%T' for 'path' attribute", rawPath))
-	}
-
-	includedSource, includedNode, exists := mr.Cache.Get(path)
+	includedSource, includedNode, exists := mr.Cache.Get(rawURL)
 	if !exists {
-		panic(errors.Errorf("could not find source associated with path '%s'", path))
+		panic(errors.Errorf("could not find source associated with url '%s'", rawURL))
 	}
 
 	var buff bytes.Buffer

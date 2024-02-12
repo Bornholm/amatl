@@ -2,17 +2,17 @@
 
 > **Available for:** `Markdown`, `HTML`, `PDF`
 
-You can use [Go templating](https://pkg.go.dev/text/template) in your Markdown documents to inject dynamic content at generation time.
+You can leverage [Go templating](https://pkg.go.dev/text/template) within your Markdown documents to inject dynamic content during generation.
 
-To enable this feature, simply pass the `--vars` with the JSON object containing your values to the `render` command.
+To activate this functionality, simply utilize the `--vars` option along with a JSON object containing your desired values when executing the `render` command.
 
-For example, if i have the following command:
+For instance, consider the following command:
 
 ```
 amatl render pdf --vars '{"foo":"bar"}' my-doc.md
 ```
 
-In `my-doc.md` i can write the following to use the injected value:
+In `my-doc.md`, you can incorporate the injected value as follows:
 
 ```markdown
 # My document
@@ -20,4 +20,4 @@ In `my-doc.md` i can write the following to use the injected value:
 Here my value will be replaced: {{ .Vars.foo }}
 ```
 
-For convenience, `amatl` exposes the [`sprig`](https://masterminds.github.io/sprig/) function library to templates.
+For added convenience, amatl provides access to the [sprig](https://masterminds.github.io/sprig/) function library within templates.

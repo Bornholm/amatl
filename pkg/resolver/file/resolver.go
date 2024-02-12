@@ -1,10 +1,12 @@
 package file
 
 import (
-	"html/template"
+	"context"
+	"io"
 	"net/url"
+	"os"
 
-	"github.com/Bornholm/amatl/pkg/html/layout"
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
 )
 
@@ -12,19 +14,19 @@ type Resolver struct {
 }
 
 // Resolve implements layout.Resolver.
-func (*Resolver) Resolve(url *url.URL, funcs template.FuncMap) (*template.Template, error) {
+func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
 	path := url.Host + url.Path
 
-	tmpl, err := template.New("").Funcs(funcs).ParseFiles(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	return tmpl, nil
+	return file, nil
 }
 
 func NewResolver() *Resolver {
 	return &Resolver{}
 }
 
-var _ layout.Resolver = &Resolver{}
+var _ resolver.Resolver = &Resolver{}

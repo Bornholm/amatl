@@ -11,12 +11,12 @@ It permits multiples things:
 
 `amatl` provides 2 base layouts:
 
-- `base://document.html` - A layout to generate generic document in A4 format (used by default);
-- `base://presentation.html` - A presentation ("slides") layout;
+- `amatl://document.html` - A layout to generate generic document in A4 format (used by default);
+- `amatl://presentation.html` - A presentation ("slides") layout;
 
 You can also use a custom layout passing the flag `--html-layout` to your command.
 
-## `base://document.html`
+## `amatl://document.html`
 
 ### Example
 
@@ -28,7 +28,7 @@ You can also use a custom layout passing the flag `--html-layout` to your comman
 
 The `Title` variable is used to defined the HTML document title.
 
-## `base://presentation.html`
+## `amatl://presentation.html`
 
 ### Example
 

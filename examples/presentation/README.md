@@ -6,7 +6,7 @@
 
 ```shell
 cd examples/presentation
-amatl render html --html-layout base://presentation.html -o presentation.html ./presentation.md
+amatl render html --html-layout amatl://presentation.html -o presentation.html ./presentation.md
 ```
 
 ### [PDF](./presentation.pdf)
@@ -15,5 +15,5 @@ amatl render html --html-layout base://presentation.html -o presentation.html ./
 
 ```shell
 cd examples/presentation
-amatl render pdf --html-layout base://presentation.html -o presentation.pdf ./presentation.md
+amatl render pdf --html-layout amatl://presentation.html -o presentation.pdf ./presentation.md
 ```

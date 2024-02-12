@@ -4,13 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
-	"path/filepath"
 
-	"github.com/Bornholm/amatl/pkg/html"
-	"github.com/Bornholm/amatl/pkg/html/layout/base"
+	"github.com/Bornholm/amatl/pkg/html/layout"
+	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
+	"github.com/Bornholm/amatl/pkg/resolver"
+
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+
+	// Register resolver schemes
+
+	_ "github.com/Bornholm/amatl/pkg/resolver/file"
+	_ "github.com/Bornholm/amatl/pkg/resolver/http"
 )
 
 const (
@@ -44,8 +51,8 @@ var (
 	}
 	flagHTMLLayout = &cli.StringFlag{
 		Name:  paramHTMLLayout,
-		Value: html.DefaultLayoutURL,
-		Usage: fmt.Sprintf("html layout to use, embedded: %v", base.Available()),
+		Value: layout.DefaultRawURL,
+		Usage: fmt.Sprintf("html layout to use, available by default: %v", amatl.Available()),
 	}
 	flagHTMLLayoutVars = &cli.StringFlag{
 		Name:  paramHTMLLayoutVars,
@@ -155,23 +162,34 @@ func getOutput(ctx *cli.Context) (io.WriteCloser, error) {
 	return file, nil
 }
 
-func getMarkdownSource(ctx *cli.Context) (string, string, []byte, error) {
+func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {
 	filename := ctx.Args().First()
 	if filename == "" {
-		return "", "", nil, errors.New("you must provide the path to a markdown file")
+		return nil, nil, errors.New("you must provide the path or url to a markdown file")
 	}
 
-	dirname, err := filepath.Abs(filepath.Dir(filename))
+	url, err := url.Parse(filename)
 	if err != nil {
-		return "", "", nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
-	source, err := os.ReadFile(filename)
+	reader, err := resolver.Resolve(ctx.Context, url)
 	if err != nil {
-		return "", "", nil, errors.WithStack(err)
+		return nil, nil, errors.WithStack(err)
 	}
 
-	return filename, dirname, source, nil
+	defer func() {
+		if err := reader.Close(); err != nil {
+			panic(errors.WithStack(err))
+		}
+	}()
+
+	source, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+
+	return url, source, nil
 }
 
 func getPDFScale(ctx *cli.Context) float64 {

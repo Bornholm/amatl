@@ -14,7 +14,7 @@ func PDF() *cli.Command {
 		Name:  "pdf",
 		Flags: withPDFFlags(),
 		Action: func(ctx *cli.Context) error {
-			_, dirname, source, err := getMarkdownSource(ctx)
+			sourceURL, source, err := getMarkdownSource(ctx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -36,7 +36,7 @@ func PDF() *cli.Command {
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
 				MarkdownTransformer(
-					WithBaseDir(dirname),
+					WithSourceURL(sourceURL),
 					WithToc(false),
 				),
 				ToggleableTransformer(
@@ -49,7 +49,7 @@ func PDF() *cli.Command {
 				// as HTML
 				HTMLTransformer(
 					WithMarkdownTransformerOptions(
-						WithBaseDir(dirname),
+						WithSourceURL(sourceURL),
 						WithToc(isTocEnabled(ctx)),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),

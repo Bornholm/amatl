@@ -16,19 +16,14 @@ type NodeRenderer struct {
 
 // Render implements directive.NodeRenderer.
 func (r *NodeRenderer) Render(writer util.BufWriter, source []byte, node *directive.Node) {
-	rawPath, exists := node.AttributeString("path")
-	if !exists {
-		panic(errors.Errorf("could not find 'path' attribute in directive '%s'", node.Kind()))
+	rawURL, err := getNodeURLAttribute(node)
+	if err != nil {
+		panic(errors.WithStack(err))
 	}
 
-	path, ok := rawPath.(string)
-	if !ok {
-		panic(errors.Errorf("unexpected type '%T' for 'path' attribute", rawPath))
-	}
-
-	includedSource, includedNode, exists := r.Cache.Get(path)
+	includedSource, includedNode, exists := r.Cache.Get(rawURL)
 	if !exists {
-		panic(errors.Errorf("could not find source associated with path '%s'", path))
+		panic(errors.Errorf("could not find source associated with url '%s'", rawURL))
 	}
 
 	var buff bytes.Buffer

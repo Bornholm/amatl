@@ -14,7 +14,7 @@ func Markdown() *cli.Command {
 		Name:  "markdown",
 		Flags: withCommonFlags(),
 		Action: func(ctx *cli.Context) error {
-			_, dirname, source, err := getMarkdownSource(ctx)
+			sourceURL, source, err := getMarkdownSource(ctx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -32,7 +32,7 @@ func Markdown() *cli.Command {
 					hasVars(ctx),
 				),
 				MarkdownTransformer(
-					WithBaseDir(dirname),
+					WithSourceURL(sourceURL),
 					WithToc(isTocEnabled(ctx)),
 				),
 			)

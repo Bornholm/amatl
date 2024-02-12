@@ -14,3 +14,5 @@ Liste à cocher:
  - [x] Case cochée
 
 ![](./aztec2.png)
+
+:include{url="inc-3.md"}

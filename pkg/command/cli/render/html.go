@@ -14,7 +14,7 @@ func HTML() *cli.Command {
 		Name:  "html",
 		Flags: withHTMLFlags(),
 		Action: func(ctx *cli.Context) error {
-			_, dirname, source, err := getMarkdownSource(ctx)
+			sourceURL, source, err := getMarkdownSource(ctx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -33,7 +33,7 @@ func HTML() *cli.Command {
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
 				MarkdownTransformer(
-					WithBaseDir(dirname),
+					WithSourceURL(sourceURL),
 					WithToc(false),
 				),
 				ToggleableTransformer(
@@ -46,7 +46,7 @@ func HTML() *cli.Command {
 				// as HTML
 				HTMLTransformer(
 					WithMarkdownTransformerOptions(
-						WithBaseDir(dirname),
+						WithSourceURL(sourceURL),
 						WithToc(isTocEnabled(ctx)),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
