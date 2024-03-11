@@ -16,6 +16,7 @@ func Renderers() map[ast.NodeKind]markdown.NodeRenderer {
 		ast.KindCodeBlock:        &CodeBlockRenderer{},
 		ast.KindFencedCodeBlock:  WithLineSpacingBefore(&CodeBlockRenderer{}, 2),
 		ast.KindHTMLBlock:        WithListOrHTMLBlockSpacing(&HTMLBlockRenderer{}),
+		ast.KindRawHTML:          WithListOrHTMLBlockSpacing(&RawHTMLRenderer{}),
 		ast.KindThematicBreak:    WithLineSpacingBefore(&ThematicBreakRenderer{}, 2),
 		ast.KindListItem:         &ListItemRenderer{},
 		ast.KindLink:             &LinkRenderer{},
