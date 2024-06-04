@@ -18,10 +18,10 @@ import (
 
 	_ "github.com/Bornholm/amatl/pkg/resolver/file"
 	_ "github.com/Bornholm/amatl/pkg/resolver/http"
+	_ "github.com/Bornholm/amatl/pkg/resolver/stdin"
 )
 
 const (
-	paramToc             = "toc"
 	paramVars            = "vars"
 	paramOutput          = "output"
 	paramHTMLLayout      = "html-layout"
@@ -34,10 +34,6 @@ const (
 )
 
 var (
-	flagToc = &cli.BoolFlag{
-		Name:  paramToc,
-		Value: false,
-	}
 	flagOutput = &cli.StringFlag{
 		Name:    paramOutput,
 		Aliases: []string{"o"},
@@ -46,8 +42,8 @@ var (
 	}
 	flagVars = &cli.StringFlag{
 		Name:  paramVars,
-		Value: "{}",
-		Usage: "enable templating and use vars as injected data",
+		Value: "",
+		Usage: "enable templating and use url resource as json injected data",
 	}
 	flagHTMLLayout = &cli.StringFlag{
 		Name:  paramHTMLLayout,
@@ -56,7 +52,8 @@ var (
 	}
 	flagHTMLLayoutVars = &cli.StringFlag{
 		Name:  paramHTMLLayoutVars,
-		Value: "{}",
+		Usage: "enable layout templating and use url resource as json injected data",
+		Value: "",
 	}
 	flagPDFMarginTop = &cli.Float64Flag{
 		Name:  paramPDFMarginTop,
@@ -85,43 +82,48 @@ var (
 	}
 )
 
-func isTocEnabled(ctx *cli.Context) bool {
-	return ctx.Bool(paramToc)
-}
+func getVars(ctx *cli.Context, param string) (map[string]any, error) {
+	rawUrl := ctx.String(param)
 
-func getVars(ctx *cli.Context) (map[string]any, error) {
-	rawVars := ctx.String(paramVars)
+	if rawUrl == "" {
+		return map[string]any{}, nil
+	}
+
+	url, err := url.Parse(rawUrl)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	reader, err := resolver.Resolve(ctx.Context, url)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	defer func() {
+		if err := reader.Close(); err != nil {
+			panic(errors.WithStack(err))
+		}
+	}()
+
+	source, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
 
 	var vars map[string]any
-	if err := json.Unmarshal([]byte(rawVars), &vars); err != nil {
+	if err := json.Unmarshal([]byte(source), &vars); err != nil {
 		return nil, errors.Wrap(err, "could not parse vars")
 	}
 
 	return vars, nil
 }
 
-func hasVars(ctx *cli.Context) bool {
-	return ctx.IsSet(paramVars)
-}
-
 func getHTMLLayout(ctx *cli.Context) string {
 	return ctx.String(paramHTMLLayout)
 }
 
-func getHTMLLayoutVars(ctx *cli.Context) (map[string]any, error) {
-	rawVars := ctx.String(paramHTMLLayoutVars)
-
-	var vars map[string]any
-	if err := json.Unmarshal([]byte(rawVars), &vars); err != nil {
-		return nil, errors.Wrap(err, "could not parse html layout vars")
-	}
-
-	return vars, nil
-}
-
 func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	return append([]cli.Flag{
-		flagToc,
 		flagVars,
 		flagOutput,
 	}, flags...)
@@ -154,7 +156,7 @@ func getOutput(ctx *cli.Context) (io.WriteCloser, error) {
 		return os.Stdout, nil
 	}
 
-	file, err := os.OpenFile(output, os.O_CREATE|os.O_WRONLY, 0640)
+	file, err := os.Create(output)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

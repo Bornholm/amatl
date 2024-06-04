@@ -1,7 +1,6 @@
 package render
 
 import (
-	"bytes"
 	"io"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -19,12 +18,12 @@ func PDF() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			vars, err := getVars(ctx)
+			vars, err := getVars(ctx, paramVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
-			layoutVars, err := getHTMLLayoutVars(ctx)
+			layoutVars, err := getVars(ctx, paramHTMLLayoutVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -32,31 +31,26 @@ func PDF() *cli.Command {
 			marginTop, marginRight, marginBottom, marginLeft := getPDFMargin(ctx)
 			scale := getPDFScale(ctx)
 
-			pipeline := pipeline.New(
+			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
-				MarkdownTransformer(
+				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
-					WithToc(false),
 				),
-				ToggleableTransformer(
-					TemplateTransformer(
-						WithVars(vars),
-					),
-					hasVars(ctx),
+				TemplateMiddleware(
+					WithVars(vars),
 				),
 				// Render the consolidated document
 				// as HTML
-				HTMLTransformer(
+				HTMLMiddleware(
 					WithMarkdownTransformerOptions(
 						WithSourceURL(sourceURL),
-						WithToc(isTocEnabled(ctx)),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
 					WithLayoutVars(layoutVars),
 				),
 				// Render generated HTML to PDF with Chromium
-				PDFTransformer(
+				PDFMiddleware(
 					WithMarginTop(marginTop),
 					WithMarginRight(marginRight),
 					WithMarginBottom(marginBottom),
@@ -65,8 +59,9 @@ func PDF() *cli.Command {
 				),
 			)
 
-			result, err := pipeline.Transform(ctx.Context, source)
-			if err != nil {
+			payload := pipeline.NewPayload(ctx.Context, source)
+
+			if err := transformer.Transform(payload); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -81,7 +76,7 @@ func PDF() *cli.Command {
 				}
 			}()
 
-			if _, err := io.Copy(output, bytes.NewBuffer(result)); err != nil {
+			if _, err := io.Copy(output, payload.Buffer()); err != nil {
 				return errors.WithStack(err)
 			}
 

@@ -1,7 +1,6 @@
 package render
 
 import (
-	"bytes"
 	"io"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -19,26 +18,23 @@ func Markdown() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			vars, err := getVars(ctx)
+			vars, err := getVars(ctx, paramVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
-			pipeline := pipeline.New(
-				ToggleableTransformer(
-					TemplateTransformer(
-						WithVars(vars),
-					),
-					hasVars(ctx),
-				),
-				MarkdownTransformer(
+			transformer := pipeline.Pipeline(
+				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
-					WithToc(isTocEnabled(ctx)),
+				),
+				TemplateMiddleware(
+					WithVars(vars),
 				),
 			)
 
-			result, err := pipeline.Transform(ctx.Context, source)
-			if err != nil {
+			payload := pipeline.NewPayload(ctx.Context, source)
+
+			if err := transformer.Transform(payload); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -53,7 +49,7 @@ func Markdown() *cli.Command {
 				}
 			}()
 
-			if _, err := io.Copy(output, bytes.NewBuffer(result)); err != nil {
+			if _, err := io.Copy(output, payload.Buffer()); err != nil {
 				return errors.WithStack(err)
 			}
 

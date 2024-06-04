@@ -21,7 +21,7 @@ type NodeTransformer struct {
 }
 
 // Transform implements directive.NodeTransformer.
-func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc parser.Context) {
+func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc parser.Context) error {
 	sourceURL := getSourceURL(pc, t.SourceURL)
 
 	rawURL, resourceURL, err := parseNodeURLAttribute(sourceURL, node)
@@ -30,7 +30,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	}
 
 	if _, _, exists := t.Cache.Get(resourceURL.String()); exists {
-		return
+		return nil
 	}
 
 	resourceReader, err := resolver.Resolve(context.Background(), resourceURL)
@@ -49,6 +49,8 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		panic(errors.Wrapf(err, "could not read markdown resource '%s'", resourceURL))
 	}
 
+	setIncludedSource(node, includedSource)
+
 	includedReader := text.NewReader(includedSource)
 
 	ctx := parser.NewContext()
@@ -60,6 +62,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		panic(errors.Wrapf(err, "could not rewrite links of included markdown resource '%s'", resourceURL))
 	}
 
+	setIncludedNode(node, includedNode)
 	t.Cache.Set(rawURL, includedSource, includedNode)
 
 	parent := node.Parent()
@@ -68,6 +71,8 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		parent.RemoveChild(parent, node)
 		grandparent.ReplaceChild(grandparent, parent, node)
 	}
+
+	return nil
 }
 
 func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) error {

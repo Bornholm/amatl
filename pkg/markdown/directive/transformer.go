@@ -1,24 +1,38 @@
 package directive
 
 import (
+	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 )
 
 type NodeTransformer interface {
-	Transform(node *Node, reader text.Reader, pc parser.Context)
+	Transform(node *Node, reader text.Reader, pc parser.Context) error
+}
+
+type PrioritizedNodeTransformer interface {
+	NodeTransformer
+	Priority() int
+}
+
+type PostTranformer interface {
+	PostTransform(doc *ast.Document, reader text.Reader, pc parser.Context) error
 }
 
 type nodeTransformer struct {
 	transform NodeTransformerFunc
 }
 
-func (t *nodeTransformer) Transform(node *Node, reader text.Reader, pc parser.Context) {
-	t.transform(node, reader, pc)
+func (t *nodeTransformer) Transform(node *Node, reader text.Reader, pc parser.Context) error {
+	if err := t.transform(node, reader, pc); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
-type NodeTransformerFunc func(node *Node, reader text.Reader, pc parser.Context)
+type NodeTransformerFunc func(node *Node, reader text.Reader, pc parser.Context) error
 
 type Transformer struct {
 	transformers map[Type]NodeTransformer
@@ -26,7 +40,7 @@ type Transformer struct {
 
 // Transform implements parser.ASTTransformer.
 func (t *Transformer) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
@@ -42,10 +56,26 @@ func (t *Transformer) Transform(doc *ast.Document, reader text.Reader, pc parser
 			return ast.WalkContinue, nil
 		}
 
-		transformer.Transform(directive, reader, pc)
+		if err := transformer.Transform(directive, reader, pc); err != nil {
+			return ast.WalkStop, errors.WithStack(err)
+		}
 
 		return ast.WalkSkipChildren, nil
 	})
+	if err != nil {
+		panic(errors.WithStack(err))
+	}
+
+	for _, transformer := range t.transformers {
+		postTransformer, ok := transformer.(PostTranformer)
+		if !ok {
+			continue
+		}
+
+		if err := postTransformer.PostTransform(doc, reader, pc); err != nil {
+			panic(errors.WithStack(err))
+		}
+	}
 }
 
 func NewTransformer(funcs ...TransformerOptionFunc) *Transformer {

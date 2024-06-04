@@ -13,6 +13,7 @@ import (
 
 type layoutData struct {
 	Vars map[string]any
+	Meta map[string]any
 	Body template.HTML
 }
 
@@ -47,6 +48,7 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 
 	data := &layoutData{
 		Vars: opts.Vars,
+		Meta: opts.Meta,
 		Body: template.HTML(body),
 	}
 
@@ -60,6 +62,7 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 type LayoutOptions struct {
 	RawURL   string
 	Vars     map[string]any
+	Meta     map[string]any
 	Resolver resolver.Resolver
 	Funcs    template.FuncMap
 }
@@ -78,6 +81,7 @@ func NewLayoutOptions(funcs ...OptionFunc) *LayoutOptions {
 	opts := &LayoutOptions{
 		RawURL:   DefaultRawURL,
 		Vars:     map[string]any{},
+		Meta:     map[string]any{},
 		Resolver: DefaultResolver,
 		Funcs:    DefaultFuncs(),
 	}
@@ -99,6 +103,14 @@ func WithVars(vars map[string]any) OptionFunc {
 	return func(opts *LayoutOptions) {
 		for key, value := range vars {
 			opts.Vars[key] = value
+		}
+	}
+}
+
+func WithMeta(meta map[string]any) OptionFunc {
+	return func(opts *LayoutOptions) {
+		for key, value := range meta {
+			opts.Meta[key] = value
 		}
 	}
 }

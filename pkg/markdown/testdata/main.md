@@ -1,5 +1,11 @@
 # I'm the main document
 
+## Table des matières
+
+:toc{}
+
+## First page
+
 I include sub-documents
 
 :include{url="./inc/inc-1.md"}
@@ -13,4 +19,3 @@ I include sub-documents
 ```
 FOO
 ```
-

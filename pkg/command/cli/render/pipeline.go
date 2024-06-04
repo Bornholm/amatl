@@ -16,6 +16,10 @@ import (
 	"github.com/yuin/goldmark/text"
 )
 
+const (
+	attrMeta = "meta"
+)
+
 type TemplateTransformerOptions struct {
 	Vars  map[string]any
 	Funcs template.FuncMap
@@ -48,33 +52,47 @@ func WithFuncs(funcs template.FuncMap) TemplateTransformerOptionFunc {
 	}
 }
 
-func TemplateTransformer(funcs ...TemplateTransformerOptionFunc) pipeline.Transformer {
+func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middleware {
 	opts := NewTemplateTransformerOptions(funcs...)
-	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
-		tmpl, err := template.New("").Funcs(opts.Funcs).Parse(string(input))
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+	return func(next pipeline.Transformer) pipeline.Transformer {
+		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+			data := payload.GetData()
 
-		var buf bytes.Buffer
+			tmpl, err := template.New("").Funcs(opts.Funcs).Parse(string(data))
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
-		data := struct {
-			Vars map[string]any
-		}{
-			Vars: opts.Vars,
-		}
+			meta, ok := pipeline.GetAttribute[map[string]any](payload, attrMeta)
+			if !ok {
+				meta = make(map[string]any)
+			}
 
-		if err := tmpl.Execute(&buf, data); err != nil {
-			return nil, errors.WithStack(err)
-		}
+			vars := struct {
+				Vars map[string]any
+				Meta map[string]any
+			}{
+				Vars: opts.Vars,
+				Meta: meta,
+			}
 
-		return buf.Bytes(), nil
-	})
+			var doc bytes.Buffer
+
+			if err := tmpl.Execute(&doc, vars); err != nil {
+				return errors.WithStack(err)
+			}
+
+			if err := next.Transform(payload); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return nil
+		})
+	}
 }
 
 type MarkdownTransformerOptions struct {
 	SourceURL *url.URL
-	WithToc   bool
 }
 
 type MarkdownTransformerOptionFunc func(opts *MarkdownTransformerOptions)
@@ -93,29 +111,37 @@ func WithSourceURL(sourceURL *url.URL) MarkdownTransformerOptionFunc {
 	}
 }
 
-func WithToc(enabled bool) MarkdownTransformerOptionFunc {
-	return func(opts *MarkdownTransformerOptions) {
-		opts.WithToc = enabled
-	}
-}
-
-func MarkdownTransformer(funcs ...MarkdownTransformerOptionFunc) pipeline.Transformer {
+func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middleware {
 	opts := NewMarkdownTransformerOptions(funcs...)
-	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
-		reader := text.NewReader(input)
+	return func(next pipeline.Transformer) pipeline.Transformer {
+		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+			data := payload.GetData()
 
-		parse := newParser(opts.SourceURL, opts.WithToc, false)
-		render := newMarkdownRenderer()
+			reader := text.NewReader(data)
 
-		document := parse.Parse(reader)
+			parse := newParser(opts.SourceURL, false)
+			render := newMarkdownRenderer()
 
-		var buf bytes.Buffer
-		if err := render.Render(&buf, input, document); err != nil {
-			return nil, errors.WithStack(err)
-		}
+			document := parse.Parse(reader)
 
-		return buf.Bytes(), nil
-	})
+			var doc bytes.Buffer
+
+			if err := render.Render(&doc, data, document); err != nil {
+				return errors.WithStack(err)
+			}
+
+			payload.SetData(doc.Bytes())
+
+			meta := document.OwnerDocument().Meta()
+			payload.SetAttribute(attrMeta, meta)
+
+			if err := next.Transform(payload); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return nil
+		})
+	}
 }
 
 type HTMLTransformerOptions struct {
@@ -156,34 +182,53 @@ func WithLayoutVars(vars map[string]any) HTMLTransformerOptionFunc {
 	}
 }
 
-func HTMLTransformer(funcs ...HTMLTransformerOptionFunc) pipeline.Transformer {
+func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 	opts := NewHTMLTransformerOptions(funcs...)
-	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
-		reader := text.NewReader(input)
+	return func(next pipeline.Transformer) pipeline.Transformer {
+		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+			data := payload.GetData()
 
-		parser := newParser(opts.SourceURL, opts.WithToc, true)
-		document := parser.Parse(reader)
+			reader := text.NewReader(data)
 
-		render := newHTMLRenderer()
+			parser := newParser(opts.SourceURL, true)
+			document := parser.Parse(reader)
 
-		var body bytes.Buffer
-		if err := render.Render(&body, input, document); err != nil {
-			return nil, errors.WithStack(err)
-		}
+			ctx := context.Background()
 
-		var doc bytes.Buffer
+			meta, ok := pipeline.GetAttribute[map[string]any](payload, attrMeta)
+			if !ok {
+				meta = make(map[string]any)
+			}
 
-		err := layout.Render(
-			ctx, &doc, body.Bytes(),
-			layout.WithURL(opts.LayoutURL),
-			layout.WithVars(opts.LayoutVars),
-		)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+			render := newHTMLRenderer()
 
-		return doc.Bytes(), nil
-	})
+			var body bytes.Buffer
+
+			if err := render.Render(&body, data, document); err != nil {
+				return errors.WithStack(err)
+			}
+
+			var doc bytes.Buffer
+
+			err := layout.Render(
+				ctx, &doc, body.Bytes(),
+				layout.WithURL(opts.LayoutURL),
+				layout.WithVars(opts.LayoutVars),
+				layout.WithMeta(meta),
+			)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			payload.SetData(doc.Bytes())
+
+			if err := next.Transform(payload); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return nil
+		})
+	}
 }
 
 type PDFTransformerOptions struct {
@@ -245,18 +290,31 @@ func WithScale(scale float64) PDFTransformerOptionFunc {
 	}
 }
 
-func PDFTransformer(funcs ...PDFTransformerOptionFunc) pipeline.Transformer {
+func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 	opts := NewPDFTransformerOptions(funcs...)
 
-	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
-		var output []byte
-		c, _ := chromedp.NewContext(context.Background())
-		if err := chromedp.Run(c, printToPDF(input, &output, opts)); err != nil {
-			return nil, errors.WithStack(err)
-		}
+	return func(next pipeline.Transformer) pipeline.Transformer {
+		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+			data := payload.GetData()
 
-		return output, nil
-	})
+			ctx, cancel := chromedp.NewContext(context.Background())
+			defer cancel()
+
+			var output []byte
+
+			if err := chromedp.Run(ctx, printToPDF(data, &output, opts)); err != nil {
+				return errors.WithStack(err)
+			}
+
+			payload.SetData(output)
+
+			if err := next.Transform(payload); err != nil {
+				return errors.WithStack(err)
+			}
+
+			return nil
+		})
+	}
 }
 
 func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.Tasks {
@@ -308,17 +366,20 @@ func centimetersToInches(cm float64) float64 {
 	return cm / 2.54
 }
 
-func ToggleableTransformer(t pipeline.Transformer, enabled bool) pipeline.Transformer {
-	return pipeline.NewTransformer(func(ctx context.Context, input []byte) ([]byte, error) {
-		if !enabled {
-			return input, nil
-		}
+func ToggleableMiddleware(t pipeline.Transformer, enabled bool) pipeline.Middleware {
+	return func(next pipeline.Transformer) pipeline.Transformer {
+		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+			if enabled {
+				if err := t.Transform(payload); err != nil {
+					return errors.WithStack(err)
+				}
+			}
 
-		output, err := t.Transform(ctx, input)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+			if err := next.Transform(payload); err != nil {
+				return errors.WithStack(err)
+			}
 
-		return output, nil
-	})
+			return nil
+		})
+	}
 }

@@ -1,7 +1,6 @@
 package render
 
 import (
-	"bytes"
 	"io"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -19,43 +18,39 @@ func HTML() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			layoutVars, err := getHTMLLayoutVars(ctx)
+			layoutVars, err := getVars(ctx, paramHTMLLayoutVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
-			vars, err := getVars(ctx)
+			vars, err := getVars(ctx, paramVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
-			pipeline := pipeline.New(
+			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
-				MarkdownTransformer(
+				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
-					WithToc(false),
 				),
-				ToggleableTransformer(
-					TemplateTransformer(
-						WithVars(vars),
-					),
-					hasVars(ctx),
+				TemplateMiddleware(
+					WithVars(vars),
 				),
 				// Render the consolidated document
 				// as HTML
-				HTMLTransformer(
+				HTMLMiddleware(
 					WithMarkdownTransformerOptions(
 						WithSourceURL(sourceURL),
-						WithToc(isTocEnabled(ctx)),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
 					WithLayoutVars(layoutVars),
 				),
 			)
 
-			result, err := pipeline.Transform(ctx.Context, source)
-			if err != nil {
+			payload := pipeline.NewPayload(ctx.Context, source)
+
+			if err := transformer.Transform(payload); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -70,7 +65,7 @@ func HTML() *cli.Command {
 				}
 			}()
 
-			if _, err := io.Copy(output, bytes.NewBuffer(result)); err != nil {
+			if _, err := io.Copy(output, payload.Buffer()); err != nil {
 				return errors.WithStack(err)
 			}
 

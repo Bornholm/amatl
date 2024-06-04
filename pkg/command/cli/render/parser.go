@@ -6,28 +6,29 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/util"
+	"go.abhg.dev/goldmark/frontmatter"
 	"go.abhg.dev/goldmark/mermaid"
-	"go.abhg.dev/goldmark/toc"
 )
 
 var (
 	cache = include.NewSourceCache()
 )
 
-func newParser(SourceURL *url.URL, withToC bool, embedLinkedResources bool) parser.Parser {
+func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
 			&mermaid.Extender{
 				RenderMode: mermaid.RenderModeClient,
 			},
-		),
-		goldmark.WithParserOptions(
-			parser.WithAutoHeadingID(),
+			&frontmatter.Extender{
+				Mode: frontmatter.SetMetadata,
+			},
 		),
 	)
 
@@ -48,21 +49,15 @@ func newParser(SourceURL *url.URL, withToC bool, embedLinkedResources bool) pars
 							Parser:    parse,
 						},
 					),
+					directive.WithTransformer(
+						toc.Type,
+						&toc.NodeTransformer{},
+					),
 				),
 				0,
 			),
 		),
 	)
-
-	if withToC {
-		parse.AddOptions(
-			parser.WithASTTransformers(
-				util.Prioritized(&toc.Transformer{
-					Title: "Table of content",
-				}, 100),
-			),
-		)
-	}
 
 	if embedLinkedResources {
 		parse.AddOptions(
