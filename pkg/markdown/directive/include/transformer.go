@@ -109,6 +109,7 @@ func (t *NodeTransformer) excludeSections(root ast.Node, minLevel int) error {
 			parent := node.Parent()
 			if parent != nil {
 				parent.RemoveChild(parent, node)
+				return ast.WalkSkipChildren, nil
 			}
 		}
 
@@ -258,20 +259,19 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 
 	switch {
 	case !isURL(rawURL) && !filepath.IsAbs(rawURL):
-		resourceURL = baseDir.JoinPath(rawURL)
-	case isURL(rawURL):
-		resourceURL, err = url.Parse(rawURL)
+		absPath, err := filepath.Abs(baseDir.Path)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "could not parse resource url '%s'", rawURL)
+			return "", nil, errors.WithStack(err)
 		}
+
+		baseDir.Path = absPath
+		resourceURL = baseDir.JoinPath(rawURL)
 
 	default:
 		resourceURL, err = url.Parse(rawURL)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "could not parse resource url '%s'", rawURL)
 		}
-
-		resourceURL = baseDir.JoinPath(resourceURL.Path)
 	}
 
 	return rawURL, resourceURL, nil
