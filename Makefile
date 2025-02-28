@@ -5,3 +5,9 @@ build:
 
 release:
 	goreleaser $(GORELEASER_ARGS)
+
+examples: example-document example-presentation
+
+example-%: build
+	bin/amatl render html --html-layout amatl://$*.html -o ./examples/$*/$*.html ./examples/$*/$*.md
+	bin/amatl render pdf --html-layout amatl://$*.html -o ./examples/$*/$*.pdf ./examples/$*/$*.md
