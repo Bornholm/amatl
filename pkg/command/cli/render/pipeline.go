@@ -82,6 +82,8 @@ func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middlew
 				return errors.WithStack(err)
 			}
 
+			payload.SetData(doc.Bytes())
+
 			if err := next.Transform(payload); err != nil {
 				return errors.WithStack(err)
 			}

@@ -4,12 +4,12 @@
 
 You can leverage [Go templating](https://pkg.go.dev/text/template) within your Markdown documents to inject dynamic content during generation.
 
-To activate this functionality, simply utilize the `--vars` option along with a JSON object containing your desired values when executing the `render` command.
+To activate this functionality, simply utilize the `--vars` option along with an URL of a JSON resource containing your desired values when executing the `render` command.
 
 For instance, consider the following command:
 
 ```
-amatl render pdf --vars '{"foo":"bar"}' my-doc.md
+echo '{"foo":"bar"}' | amatl render pdf --vars stdin://  my-doc.md
 ```
 
 In `my-doc.md`, you can incorporate the injected value as follows:
