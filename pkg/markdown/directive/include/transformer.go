@@ -259,6 +259,12 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 	switch {
 	case !isURL(rawURL) && !filepath.IsAbs(rawURL):
 		resourceURL = baseDir.JoinPath(rawURL)
+	case isURL(rawURL):
+		resourceURL, err = url.Parse(rawURL)
+		if err != nil {
+			return "", nil, errors.Wrapf(err, "could not parse resource url '%s'", rawURL)
+		}
+
 	default:
 		resourceURL, err = url.Parse(rawURL)
 		if err != nil {
