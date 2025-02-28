@@ -22,6 +22,7 @@ var (
 func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
+
 			extension.GFM,
 			&mermaid.Extender{
 				RenderMode: mermaid.RenderModeClient,
@@ -35,6 +36,7 @@ func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 	parse := markdown.Parser()
 
 	parse.AddOptions(
+		parser.WithAutoHeadingID(),
 		parser.WithInlineParsers(
 			util.Prioritized(&directive.InlineParser{}, 0),
 		),

@@ -1,7 +1,6 @@
 package toc
 
 import (
-	"log"
 	"math"
 	"strconv"
 
@@ -17,8 +16,17 @@ type tocItem struct {
 	Level    int
 	Label    []byte
 	ID       []byte
-	Parent   *tocItem
 	Children []*tocItem
+	Parent   *tocItem
+}
+
+func (i *tocItem) FirstAncestor(level int) *tocItem {
+	if i.Level < level {
+		return i
+	} else if i.Parent != nil {
+		return i.Parent.FirstAncestor(level)
+	}
+	return nil
 }
 
 type NodeTransformer struct {
@@ -121,6 +129,8 @@ func treeToNode(tree []*tocItem) (ast.Node, error) {
 func buildTree(root ast.Node, reader text.Reader, minLevel int, maxLevel int) ([]*tocItem, error) {
 	stack := []*tocItem{}
 
+	var lastInserted *tocItem
+
 	appendHeading := func(heading *ast.Heading) {
 		label := heading.Text(reader.Source())
 
@@ -128,12 +138,9 @@ func buildTree(root ast.Node, reader text.Reader, minLevel int, maxLevel int) ([
 			return
 		}
 
-		log.Printf("%s %v", label, heading.Level)
-
 		newItem := &tocItem{
 			Level:    heading.Level,
 			Label:    label,
-			Parent:   &tocItem{},
 			Children: []*tocItem{},
 		}
 
@@ -141,20 +148,24 @@ func buildTree(root ast.Node, reader text.Reader, minLevel int, maxLevel int) ([
 			newItem.ID, _ = id.([]byte)
 		}
 
-		var lastItem *tocItem
-		if len(stack) > 0 {
-			lastItem = stack[len(stack)-1]
-		}
-
-		if lastItem != nil {
-			if lastItem.Level < newItem.Level {
-				lastItem.Children = append(lastItem.Children, newItem)
+		if lastInserted != nil {
+			if lastInserted.Level < newItem.Level {
+				lastInserted.Children = append(lastInserted.Children, newItem)
+				newItem.Parent = lastInserted
 			} else {
-				stack = append(stack, newItem)
+				firstAncestor := lastInserted.FirstAncestor(newItem.Level)
+				if firstAncestor != nil {
+					firstAncestor.Children = append(firstAncestor.Children, newItem)
+					newItem.Parent = firstAncestor
+				} else {
+					stack = append(stack, newItem)
+				}
 			}
 		} else {
 			stack = append(stack, newItem)
 		}
+
+		lastInserted = newItem
 	}
 
 	err := ast.Walk(root, func(n ast.Node, entering bool) (ast.WalkStatus, error) {

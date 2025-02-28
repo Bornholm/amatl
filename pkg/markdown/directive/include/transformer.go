@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 	"path/filepath"
+	"strconv"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -26,7 +27,17 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	rawURL, resourceURL, err := parseNodeURLAttribute(sourceURL, node)
 	if err != nil {
-		panic(errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType()))
+		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
+	}
+
+	shiftHeadings, err := getNodeShiftHeadingsAttribute(node)
+	if err != nil {
+		shiftHeadings = 0
+	}
+
+	fromHeadings, err := getNodeFromHeadingsAttribute(node)
+	if err != nil {
+		fromHeadings = 0
 	}
 
 	if _, _, exists := t.Cache.Get(resourceURL.String()); exists {
@@ -35,7 +46,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	resourceReader, err := resolver.Resolve(context.Background(), resourceURL)
 	if err != nil {
-		panic(errors.Wrapf(err, "could not resolve resource '%s'", resourceURL))
+		return errors.Wrapf(err, "could not resolve resource '%s'", resourceURL)
 	}
 
 	defer func() {
@@ -46,7 +57,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedSource, err := io.ReadAll(resourceReader)
 	if err != nil {
-		panic(errors.Wrapf(err, "could not read markdown resource '%s'", resourceURL))
+		return errors.Wrapf(err, "could not read markdown resource '%s'", resourceURL)
 	}
 
 	setIncludedSource(node, includedSource)
@@ -58,8 +69,16 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedNode := t.Parser.Parse(includedReader, parser.WithContext(ctx))
 
+	if err := t.excludeSections(includedNode, fromHeadings); err != nil {
+		return errors.Wrapf(err, "could not exclude sections of included markdown resource '%s'", resourceURL)
+	}
+
 	if err := t.rewriteRelativeLinks(includedNode, resourceURL); err != nil {
-		panic(errors.Wrapf(err, "could not rewrite links of included markdown resource '%s'", resourceURL))
+		return errors.Wrapf(err, "could not rewrite links of included markdown resource '%s'", resourceURL)
+	}
+
+	if err := t.shiftHeadings(includedNode, shiftHeadings); err != nil {
+		return errors.Wrapf(err, "could not shift headings of included markdown resource '%s'", resourceURL)
 	}
 
 	setIncludedNode(node, includedNode)
@@ -70,6 +89,59 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		grandparent := parent.Parent()
 		parent.RemoveChild(parent, node)
 		grandparent.ReplaceChild(grandparent, parent, node)
+	}
+
+	return nil
+}
+
+func (t *NodeTransformer) excludeSections(root ast.Node, minLevel int) error {
+	currentLevel := 0
+	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+
+		if heading, ok := node.(*ast.Heading); ok {
+			currentLevel = heading.Level
+		}
+
+		if currentLevel < minLevel {
+			parent := node.Parent()
+			if parent != nil {
+				parent.RemoveChild(parent, node)
+			}
+		}
+
+		return ast.WalkContinue, nil
+	})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
+}
+
+func (t *NodeTransformer) shiftHeadings(root ast.Node, shift int) error {
+	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+
+		switch n := node.(type) {
+		case *ast.Heading:
+			newLevel := n.Level + shift
+			if newLevel > 6 {
+				newLevel = 6
+			}
+			n.Level = newLevel
+		default:
+			return ast.WalkContinue, nil
+		}
+
+		return ast.WalkContinue, nil
+	})
+	if err != nil {
+		return errors.WithStack(err)
 	}
 
 	return nil
@@ -130,6 +202,48 @@ func getNodeURLAttribute(node ast.Node) (string, error) {
 	}
 
 	return rawURL, nil
+}
+
+const attrNameShiftHeadings = "shiftHeadings"
+
+func getNodeShiftHeadingsAttribute(node ast.Node) (int, error) {
+	shiftHeadingsAttrValue, exists := node.AttributeString(attrNameShiftHeadings)
+	if !exists {
+		return 0, errors.Errorf("attribute '%s' not found", attrNameShiftHeadings)
+	}
+
+	rawShiftHeadings, ok := shiftHeadingsAttrValue.(string)
+	if !ok {
+		return 0, errors.Errorf("unexpected value type '%T' for '%s' attribute", shiftHeadingsAttrValue, attrNameShiftHeadings)
+	}
+
+	shiftHeadings, err := strconv.ParseInt(rawShiftHeadings, 10, 64)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	return int(shiftHeadings), nil
+}
+
+const attrNameFromHeadings = "fromHeadings"
+
+func getNodeFromHeadingsAttribute(node ast.Node) (int, error) {
+	fromHeadingsAttrValue, exists := node.AttributeString(attrNameFromHeadings)
+	if !exists {
+		return 0, errors.Errorf("attribute '%s' not found", attrNameFromHeadings)
+	}
+
+	rawFromHeadings, ok := fromHeadingsAttrValue.(string)
+	if !ok {
+		return 0, errors.Errorf("unexpected value type '%T' for '%s' attribute", attrNameFromHeadings, attrNameShiftHeadings)
+	}
+
+	fromHeadings, err := strconv.ParseInt(rawFromHeadings, 10, 64)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+
+	return int(fromHeadings), nil
 }
 
 func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, error) {

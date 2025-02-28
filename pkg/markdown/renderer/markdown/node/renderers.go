@@ -59,7 +59,7 @@ func WithListOrHTMLBlockSpacing(renderer markdown.NodeRenderer) markdown.NodeRen
 
 			_, _ = r.Writer().Write(markdown.NewLineChar)
 
-			if node.HasBlankPreviousLines() {
+			if node.Type() != ast.TypeInline && node.HasBlankPreviousLines() {
 				_, _ = r.Writer().Write(markdown.NewLineChar)
 			}
 		},

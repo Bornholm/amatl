@@ -37,6 +37,13 @@
       }
 
       @media print {
+        .markdown-body > h1:first-of-type {
+          margin-top: calc(0.3 * 100vh) !important;
+          border-bottom: none;
+          text-align: center;
+          page-break-after: always;
+        }
+
         h1,
         h2 {
           page-break-before: always;
