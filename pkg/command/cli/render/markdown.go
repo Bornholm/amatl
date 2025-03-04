@@ -6,12 +6,15 @@ import (
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v2/altsrc"
 )
 
 func Markdown() *cli.Command {
+	flags := withCommonFlags()
 	return &cli.Command{
-		Name:  "markdown",
-		Flags: withCommonFlags(),
+		Name:   "markdown",
+		Flags:  flags,
+		Before: altsrc.InitInputSourceWithContext(flags, NewResolverSourceFromFlagFunc("config")),
 		Action: func(ctx *cli.Context) error {
 			sourceURL, source, err := getMarkdownSource(ctx)
 			if err != nil {

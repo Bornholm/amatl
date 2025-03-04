@@ -6,12 +6,15 @@ import (
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v2/altsrc"
 )
 
 func HTML() *cli.Command {
+	flags := withHTMLFlags()
 	return &cli.Command{
-		Name:  "html",
-		Flags: withHTMLFlags(),
+		Name:   "html",
+		Flags:  flags,
+		Before: altsrc.InitInputSourceWithContext(flags, NewResolverSourceFromFlagFunc("config")),
 		Action: func(ctx *cli.Context) error {
 			sourceURL, source, err := getMarkdownSource(ctx)
 			if err != nil {

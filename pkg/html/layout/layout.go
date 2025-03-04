@@ -71,19 +71,17 @@ type OptionFunc func(opts *LayoutOptions)
 
 const DefaultRawURL = "amatl://document.html"
 
-var DefaultResolver = resolver.DefaultResolver.Extend(
-	func() (scheme string, resolver resolver.Resolver) {
-		return amatl.Scheme, amatl.NewResolver()
-	},
-)
-
 func NewLayoutOptions(funcs ...OptionFunc) *LayoutOptions {
 	opts := &LayoutOptions{
-		RawURL:   DefaultRawURL,
-		Vars:     map[string]any{},
-		Meta:     map[string]any{},
-		Resolver: DefaultResolver,
-		Funcs:    DefaultFuncs(),
+		RawURL: DefaultRawURL,
+		Vars:   map[string]any{},
+		Meta:   map[string]any{},
+		Resolver: resolver.DefaultResolver.Extend(
+			func() (scheme string, resolver resolver.Resolver) {
+				return amatl.Scheme, amatl.NewResolver()
+			},
+		),
+		Funcs: DefaultFuncs(),
 	}
 
 	for _, fn := range funcs {

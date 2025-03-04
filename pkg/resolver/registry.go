@@ -34,7 +34,7 @@ func (r *Registry) Register(scheme string, resolver Resolver) {
 func (r *Registry) Extend(extensions ...func() (scheme string, resolver Resolver)) *Registry {
 	registry := NewRegistry()
 	for scheme, resolver := range r.resolvers {
-		registry.resolvers[scheme] = resolver
+		registry.Register(scheme, resolver)
 	}
 
 	for _, ext := range extensions {
