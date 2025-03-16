@@ -28,6 +28,8 @@ func Renderers() map[ast.NodeKind]markdown.NodeRenderer {
 		ast.KindTextBlock:        WithLineSpacingBefore(&DummyRenderer{}, 2),
 		ast.KindList:             WithListOrHTMLBlockSpacing(&DummyRenderer{}),
 		extAST.KindTableCell:     &DummyRenderer{},
+		extAST.KindTableHeader:   &DummyRenderer{},
+		extAST.KindTableRow:      &DummyRenderer{},
 		extAST.KindStrikethrough: &StrikethroughRenderer{},
 		extAST.KindTaskCheckBox:  &TaskCheckboxRenderer{},
 		extAST.KindTable:         WithLineSpacingBefore(&TableRenderer{}, 2),
