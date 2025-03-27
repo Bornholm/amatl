@@ -6,11 +6,10 @@
 
 Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged documents from the command line.
 
-
 > **Why the name `amatl` ?**
 >
 > Amate (Spanish: amate `[aˈmate]` from Nahuatl languages: āmatl `[ˈaːmat͡ɬ]` is a type of bark paper that has been manufactured in Mexico since the precontact times. It was used primarily to create codices.
-> 
+>
 > Source: [Wikipédia](https://en.wikipedia.org/wiki/Amate)
 
 ## Features
@@ -30,9 +29,9 @@ Transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](h
 1. Download [the latest release](https://github.com/Bornholm/amatl/releases/latest) of `amatl`
 2. In your terminal, start transforming your documents to HTML:
 
-  ```shell
-  amatl render html my-doc.md
-  ```
+```shell
+amatl render html my-doc.md
+```
 
 See [`./doc`](./doc/README.md) for more informations.
 
