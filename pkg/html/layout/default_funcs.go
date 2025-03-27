@@ -2,18 +2,25 @@ package layout
 
 import (
 	"bytes"
+	"context"
 	"html/template"
+	"io"
+	"net/http"
+	"net/url"
 
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/andybalholm/cascadia"
 	"github.com/pkg/errors"
+	"github.com/vincent-petithory/dataurl"
 	"golang.org/x/net/html"
 )
 
-func DefaultFuncs() template.FuncMap {
+func DefaultFuncs(resolver resolver.Resolver) template.FuncMap {
 	funcs := sprig.FuncMap()
 	funcs["htmlQueryAll"] = htmlQueryAll
 	funcs["htmlSplit"] = htmlSplit
+	funcs["resolve"] = getResolveFunc(resolver)
 	return funcs
 }
 
@@ -118,4 +125,36 @@ func htmlSplit(rawHTML template.HTML, query string) ([]template.HTML, error) {
 	}
 
 	return elements, nil
+}
+
+func getResolveFunc(resolver resolver.Resolver) func(ctx context.Context, rawURL string, mimeTypes ...string) (template.URL, error) {
+	return func(ctx context.Context, rawURL string, mimeTypes ...string) (template.URL, error) {
+		url, err := url.Parse(rawURL)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		reader, err := resolver.Resolve(ctx, url)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		defer reader.Close()
+
+		data, err := io.ReadAll(reader)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		var mimeType string
+		if len(mimeTypes) == 0 {
+			mimeType = http.DetectContentType(data)
+		} else {
+			mimeType = mimeTypes[0]
+		}
+
+		dataURL := dataurl.New(data, mimeType)
+
+		return template.URL(dataURL.String()), nil
+	}
 }

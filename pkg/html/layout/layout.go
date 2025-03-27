@@ -12,9 +12,10 @@ import (
 )
 
 type layoutData struct {
-	Vars map[string]any
-	Meta map[string]any
-	Body template.HTML
+	Vars    map[string]any
+	Meta    map[string]any
+	Body    template.HTML
+	Context context.Context
 }
 
 func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) error {
@@ -46,10 +47,13 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 		return errors.WithStack(err)
 	}
 
+	ctx = resolver.WithWorkDir(ctx, url.JoinPath("../"))
+
 	data := &layoutData{
-		Vars: opts.Vars,
-		Meta: opts.Meta,
-		Body: template.HTML(body),
+		Vars:    opts.Vars,
+		Meta:    opts.Meta,
+		Body:    template.HTML(body),
+		Context: ctx,
 	}
 
 	if err := layout.Execute(w, data); err != nil {
@@ -72,16 +76,17 @@ type OptionFunc func(opts *LayoutOptions)
 const DefaultRawURL = "amatl://document.html"
 
 func NewLayoutOptions(funcs ...OptionFunc) *LayoutOptions {
+	resolver := resolver.DefaultResolver.Extend(
+		func() (scheme string, resolver resolver.Resolver) {
+			return amatl.Scheme, amatl.NewResolver()
+		},
+	)
 	opts := &LayoutOptions{
-		RawURL: DefaultRawURL,
-		Vars:   map[string]any{},
-		Meta:   map[string]any{},
-		Resolver: resolver.DefaultResolver.Extend(
-			func() (scheme string, resolver resolver.Resolver) {
-				return amatl.Scheme, amatl.NewResolver()
-			},
-		),
-		Funcs: DefaultFuncs(),
+		RawURL:   DefaultRawURL,
+		Vars:     map[string]any{},
+		Meta:     map[string]any{},
+		Resolver: resolver,
+		Funcs:    DefaultFuncs(resolver),
 	}
 
 	for _, fn := range funcs {

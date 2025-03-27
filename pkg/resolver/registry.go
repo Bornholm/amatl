@@ -14,6 +14,8 @@ type Registry struct {
 
 // Resolve implements Resolver.
 func (r *Registry) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
+	ctx = WithResolver(ctx, r)
+
 	resolver, exists := r.resolvers[url.Scheme]
 	if !exists {
 		return nil, errors.Wrapf(ErrSchemeNotRegistered, "could not resolve scheme '%s'", url.Scheme)

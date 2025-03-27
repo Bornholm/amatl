@@ -7,6 +7,7 @@ require (
 	github.com/andybalholm/cascadia v1.3.2
 	github.com/chromedp/cdproto v0.0.0-20240602235142-49d0e97b7881
 	github.com/chromedp/chromedp v0.9.5
+	github.com/davecgh/go-spew v1.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/urfave/cli/v2 v2.27.2
 	github.com/vincent-petithory/dataurl v1.0.0

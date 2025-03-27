@@ -5,10 +5,12 @@ import (
 	"context"
 	"html/template"
 	"net/url"
+	"path/filepath"
 	"sync"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/pipeline"
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -212,7 +214,16 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			var doc bytes.Buffer
 
-			err := layout.Render(
+			workDir, err := url.Parse(opts.LayoutURL)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			workDir.Path = filepath.Dir(workDir.Path)
+
+			ctx = resolver.WithWorkDir(ctx, workDir)
+
+			err = layout.Render(
 				ctx, &doc, body.Bytes(),
 				layout.WithURL(opts.LayoutURL),
 				layout.WithVars(opts.LayoutVars),
