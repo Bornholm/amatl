@@ -1,4 +1,8 @@
-# My first slide
+---
+title: My first slide
+---
+
+# {{ .Meta.title }}
 
 You can write your Markdown content as you want...
 
@@ -18,7 +22,7 @@ You can write your Markdown content as you want...
 
 ```js
 function isOdd(v) {
-    return (v % 2) !== 1;
+  return v % 2 !== 1;
 }
 ```
 

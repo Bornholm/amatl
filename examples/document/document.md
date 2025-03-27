@@ -1,16 +1,20 @@
-# Voce ignibus Phaethon pulchra
+---
+title: Voce ignibus Phaethon pulchra
+---
+
+# {{ .Meta.title }}
 
 ## Titanida perlucida me quidque furori cuspidis sonant
 
 Lorem markdownum torvis naiades; hoc vel nisi exsiccata dextera. Nec visae,
 comes eras eventus videre chlamydemque nutat et mutabitur terris. Hic nunc
-carinae *mira* o sortite ferunt, alii [est](http://non-onus.org/ruitis-abit)
-perstant hoc, *paternas*; bracchia crescere membra, se. Formam proterit, ea
+carinae _mira_ o sortite ferunt, alii [est](http://non-onus.org/ruitis-abit)
+perstant hoc, _paternas_; bracchia crescere membra, se. Formam proterit, ea
 Scironis penates: Telamone moriturae utque!
 
 > Quos infecit, tuos Aegeus. Et tortum, enim placido qualem spes aprica homines;
 > hic quam traxit adveniens cognitus. Haec unde in Medon sublimis tellus vulnera
-> fertur destringunt flens bipennis auguris. Lunae enim crimen *terrae*? Dat
+> fertur destringunt flens bipennis auguris. Lunae enim crimen _terrae_? Dat
 > soror vulnera hominum [cremabo](http://idque.org/incaeno) terrae moderator
 > **visis educat**, tamen laborem certe!
 
@@ -20,10 +24,10 @@ Longoque sinuatur cetera [ignorat](http://neccadi.com/) Thracis. Flumineae et
 etiam fiet effugit fulsit. Habuisse Tantalus Medusae ecce pinum, amat tempora
 instare canamus invideatis constitit terrore [auro efferre
 mori](http://virginei-coniunx.com/sistetur-nostra)! Latini neve sim quanta
-*postquam*. Flumina toto natant laudatae, feremus frustra,
+_postquam_. Flumina toto natant laudatae, feremus frustra,
 [dentes](http://www.discrimina.com/eratdeficiunt) ne quid placet?
 
-> Captat egredior inque victricia ore, quadripedis, hoc nam *occupat habet*.
+> Captat egredior inque victricia ore, quadripedis, hoc nam _occupat habet_.
 > Mihi [dedit iussa posse](http://www.vestros.io/putat.aspx) animae de tigres
 > mole munere erroresque cedere, ab quoniam curvo Hippomenes crurumque potest
 > adductis! Tenuere precibus certa innuptaeque est futuri equidem tutae et deus
@@ -33,17 +37,17 @@ mori](http://virginei-coniunx.com/sistetur-nostra)! Latini neve sim quanta
 
 ## Denique illa cervi
 
-Inritare *et utve siccaverat* tu illam properare secernit *nemus* mea. Tela sibi
+Inritare _et utve siccaverat_ tu illam properare secernit _nemus_ mea. Tela sibi
 pietas me ab erat, cvrrvs, lacum carina et visaque. Alcides et onus adeunt honor
-naturaeque silva *instituit nitere* Aesonis terret
+naturaeque silva _instituit nitere_ Aesonis terret
 [aurum](http://www.et.net/tellure.html) vitae corpore odoribus.
 
-Odorato de dilexit guttura. Invidiam et vigil *pugnare ratem validis* consistere
+Odorato de dilexit guttura. Invidiam et vigil _pugnare ratem validis_ consistere
 petit!
 
 ## Pontusque valles terga
 
-Diversa membra; non undae. Misit fuit respiceret *decoram* discidium tantaeque
+Diversa membra; non undae. Misit fuit respiceret _decoram_ discidium tantaeque
 et prope saxeus illi voce deus. Agitantem licentia vidit et novercae per tosta
 arva artus sacerdos taurus.
 
@@ -54,16 +58,16 @@ tenus](http://qui.com/possem.html) aut **Tenos murmure semina** Ismenides nomine
 percussit. Ungues ingredior audiat vigor. Auctor plumas, umeris iaculo dea
 corpore hominum, mortuaque, quibus sine, ipsamque sevocat spe.
 
-In futurae summe. Hinc imago: in corpore perque squamae *quam* terruit iste
+In futurae summe. Hinc imago: in corpore perque squamae _quam_ terruit iste
 oris? Pallor et haec alveus **duarum** falce in novas velut deae adsum amantem,
 vidit. Ne deum Maenaliosque [nunc obscenae
 precor](http://aellodebentia.com/equiquetorreri.php); iudice manu boves quoque
 putrefacta. Mirata [equidem](http://dumque.io/fratrum-miliaque.html) vetaris
-Pelasgi, partus hiatu *dei de opto* coniuge delusa *pendulaque* imitatus, victor
+Pelasgi, partus hiatu _dei de opto_ coniuge delusa _pendulaque_ imitatus, victor
 perii?
 
 Lorem markdownum pulvis. Erat ignes horrore? Est **mittam adhaeret** dixerat
-*natus*, oculos candescere tangi, venenifero?
+_natus_, oculos candescere tangi, venenifero?
 
 ```
 system_rate_kvm += key(hfsKdeHypertext) + query(systrayMicrocomputerJpeg +
