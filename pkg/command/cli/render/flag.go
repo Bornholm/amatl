@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
@@ -36,6 +37,7 @@ const (
 	paramPDFMarginRight  = "pdf-margin-right"
 	paramPDFMarginBottom = "pdf-margin-bottom"
 	paramPDFScale        = "pdf-scale"
+	paramPDFTimeout      = "pdf-timeout"
 )
 
 var (
@@ -84,6 +86,11 @@ var (
 		Name:  paramPDFScale,
 		Value: DefaultPDFScale,
 		Usage: "pdf print scale",
+	})
+	flagPDFTimeout = altsrc.NewDurationFlag(&cli.DurationFlag{
+		Name:  paramPDFTimeout,
+		Value: DefaultPDFTimeout,
+		Usage: "pdf generation timeout",
 	})
 )
 
@@ -150,6 +157,7 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 		flagPDFMarginRight,
 		flagPDFMarginBottom,
 		flagPDFScale,
+		flagPDFTimeout,
 	)
 
 	return withHTMLFlags(flags...)
@@ -208,6 +216,10 @@ func getPDFMargin(ctx *cli.Context) (top float64, right float64, bottom float64,
 		ctx.Float64(paramPDFMarginRight),
 		ctx.Float64(paramPDFMarginBottom),
 		ctx.Float64(paramPDFMarginLeft)
+}
+
+func getPDFTimeout(ctx *cli.Context) time.Duration {
+	return ctx.Duration(paramPDFTimeout)
 }
 
 func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.InputSourceContext, error) {

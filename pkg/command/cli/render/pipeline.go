@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -250,11 +251,13 @@ type PDFTransformerOptions struct {
 	MarginRight  float64
 	MarginBottom float64
 	Scale        float64
+	Timeout      time.Duration
 }
 
 const (
-	DefaultPDFMargin float64 = 1
-	DefaultPDFScale  float64 = 1
+	DefaultPDFMargin  float64       = 1
+	DefaultPDFScale   float64       = 1
+	DefaultPDFTimeout time.Duration = time.Minute
 )
 
 type PDFTransformerOptionFunc func(opts *PDFTransformerOptions)
@@ -266,6 +269,7 @@ func NewPDFTransformerOptions(funcs ...PDFTransformerOptionFunc) *PDFTransformer
 		MarginRight:  DefaultPDFMargin,
 		MarginBottom: DefaultPDFMargin,
 		Scale:        DefaultPDFScale,
+		Timeout:      DefaultPDFTimeout,
 	}
 	for _, fn := range funcs {
 		fn(opts)
@@ -303,6 +307,12 @@ func WithScale(scale float64) PDFTransformerOptionFunc {
 	}
 }
 
+func WithTimeout(timeout time.Duration) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.Timeout = timeout
+	}
+}
+
 func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 	opts := NewPDFTransformerOptions(funcs...)
 
@@ -310,13 +320,16 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
 			data := payload.GetData()
 
-			ctx, cancel := chromedp.NewContext(context.Background())
+			ctx, timeoutCancel := context.WithTimeout(context.Background(), opts.Timeout)
+			defer timeoutCancel()
+
+			ctx, cancel := chromedp.NewContext(ctx)
 			defer cancel()
 
 			var output []byte
 
 			if err := chromedp.Run(ctx, printToPDF(data, &output, opts)); err != nil {
-				return errors.WithStack(err)
+				return errors.Wrap(err, "could not execute chrome")
 			}
 
 			payload.SetData(output)
@@ -355,6 +368,7 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			wg.Wait()
 			return nil
 		}),
+		chromedp.WaitReady("body"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			buf, _, err := page.PrintToPDF().
 				WithPrintBackground(false).
@@ -369,6 +383,7 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			if err != nil {
 				return err
 			}
+
 			*res = buf
 			return nil
 		}),
