@@ -4,6 +4,12 @@ title: Voce ignibus Phaethon pulchra
 
 # {{ .Meta.title }}
 
+## Table of contents
+
+> You can use the `:toc{}` directive to automatically generate the table of contents of your document.
+
+:toc{minLevel="2"}
+
 ## Titanida perlucida me quidque furori cuspidis sonant
 
 Lorem markdownum torvis naiades; hoc vel nisi exsiccata dextera. Nec visae,
@@ -136,3 +142,30 @@ Iovis me, meae sedibus, [Tyria manentem et](http://agitinprobe.org/) certo;
 culpa. Sunt [nunc tacitos](http://melior-phrixeaque.net/toros) est nec.
 Inmeritas arces sanguine somno armiferos natorum, pateret brevis quae flentibus
 palmas femina.
+
+## Directives
+
+## `:attrs{attributes...}`
+
+Add list of attributes to the next element.
+
+**Exemple**
+
+Adding the `.my-rotated-image` to the next image.
+
+```markdown
+:attrs{class="my-rotated-image"}
+
+![](https://placehold.co/100x100/png)
+```
+
+<style>
+.my-rotated-image > img {
+    transform: rotateZ(45deg);
+    margin-top: 25px;
+}
+</style>
+
+:attrs{class="my-rotated-image"}
+
+![](https://placehold.co/100x100/png)

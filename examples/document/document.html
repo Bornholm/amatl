@@ -26,6 +26,12 @@
         margin-bottom: 0 !important;
       }
 
+      .markdown-body img {
+        max-height: 90vh;
+        display: block;
+        margin: auto;
+      }
+
       @media (max-width: 767px) {
         .markdown-body {
           padding: 10px;
@@ -85,17 +91,47 @@
         ol > ol {
           break-inside: avoid;
         }
-
-        img {
-          max-height: 90vh;
-          display: block;
-          margin: auto;
-        }
       }
     </style>
   </head>
   <body class="markdown-body">
     <h1 id="voce-ignibus-phaethon-pulchra">Voce ignibus Phaethon pulchra</h1>
+<h2 id="table-of-contents">Table of contents</h2>
+<blockquote>
+<p>You can use the <code>:toc{}</code> directive to automatically generate the table of contents of your document.</p>
+</blockquote>
+<ul>
+<li>
+<p><a href="#table-of-contents">Table of contents</a></p>
+</li>
+<li>
+<p><a href="#titanida-perlucida-me-quidque-furori-cuspidis-sonant">Titanida perlucida me quidque furori cuspidis sonant</a></p>
+</li>
+<li>
+<p><a href="#atque-ferre-sine-gens-artus">Atque ferre sine gens artus</a></p>
+</li>
+<li>
+<p><a href="#denique-illa-cervi">Denique illa cervi</a></p>
+</li>
+<li>
+<p><a href="#pontusque-valles-terga">Pontusque valles terga</a></p>
+</li>
+<li>
+<p><a href="#omnes-cum-servata-undas-grande">Omnes cum servata undas grande</a></p>
+</li>
+<li>
+<p><a href="#quaque-dixit-tuaeque-flammae-voces-est-exauditi">Quaque dixit tuaeque flammae voces est exauditi</a></p>
+</li>
+<li>
+<p><a href="#venientis-auras-spemque">Venientis auras spemque</a></p>
+</li>
+<li>
+<p><a href="#directives">Directives</a></p>
+</li>
+<li>
+<p><a href="#attrsattributes">:attrs{attributes...}</a></p>
+</li>
+</ul>
 <h2 id="titanida-perlucida-me-quidque-furori-cuspidis-sonant">Titanida perlucida me quidque furori cuspidis sonant</h2>
 <p>Lorem markdownum torvis naiades; hoc vel nisi exsiccata dextera. Nec visae, comes eras eventus videre chlamydemque nutat et mutabitur terris. Hic nunc carinae <em>mira</em> o sortite ferunt, alii <a href="http://non-onus.org/ruitis-abit">est</a> perstant hoc, <em>paternas</em>; bracchia crescere membra, se. Formam proterit, ea Scironis penates: Telamone moriturae utque!</p>
 <blockquote>
@@ -152,6 +188,22 @@ forum_processor.dslam.program_trash(networkProcessorBaud, nanometer);
 sidebar = win;
 </code></pre>
 <p>Iovis me, meae sedibus, <a href="http://agitinprobe.org/">Tyria manentem et</a> certo; culpa. Sunt <a href="http://melior-phrixeaque.net/toros">nunc tacitos</a> est nec. Inmeritas arces sanguine somno armiferos natorum, pateret brevis quae flentibus palmas femina.</p>
+<h2 id="directives">Directives</h2>
+<h2 id="attrsattributes"><code>:attrs{attributes...}</code></h2>
+<p>Add list of attributes to the next element.</p>
+<p><strong>Exemple</strong></p>
+<p>Adding the <code>.my-rotated-image</code> to the next image.</p>
+<pre style="background-color:#fff;"><code><span style="display:flex;"><span>:attrs{class=&#34;my-rotated-image&#34;}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>![](https://placehold.co/100x100/png)
+</span></span></code></pre><style>
+.my-rotated-image > img {
+    transform: rotateZ(45deg);
+    margin-top: 25px;
+}
+</style>
+<p></p>
+<p class="my-rotated-image"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAYAAABw4pVUAAAACXBIWXMAAAsTAAALEwEAmpwYAAADzklEQVR4nO2Y6U7jMBSFef83KJsAAapQSwGx70sFpSDEVtaeZ/HoWLhK0pRFdDRn4Pz4BLHrxL7f9c0yAiAYyDDyrydgYCEQxkKghYVACwuBFhYCLSwEWlgItLAQaGEh0MJCoIWFQAsLgRYWAi0sBFpYCLSwEGhhIdDCQqCFhUALC4EWFgItLARaWAi0sBBoYSHQwkKghYVACwuBFhYCLSwEWlgItLAQaGEh0MJCoIWFQAsLgRYWAi0sBFpYCLSwEGhhIdDCQvALhHS73fD09BT/lvU/PDyE+/v7geMfHx9j/6Dx3+X5+Tm8vLyU9nHevPbr62tpP8exf9B4OSFcbK1WC5VKJZydneX6uJBqtRr7yOzsbLi+vs4Fo/Y2lkxPT4d2uz3U+e3u7sZzr66u9iUR20ZHR2P/xMREODk5yf1me3s7jI2Nxf7x8fF4LmkhDDiDnAKaFcIFz8/PxwUdHByEZrMZJicnw9TUVJTI39Tr9RiQnZ2dcHp6GoVw4e/tps/CjF9ZWenNrShkc3Oz1855p8S5vLyM/YeHh/F4cXExtFqtXuJwHZJCuIUZXAZ5eXm5TwgznW0bGxu9tqOjo9jGv3d3d/H/RqPR6z8/P49tDFbxetxNa2trudJBiaRsfpwTZa+vr/cJ4TkonsmUTS7+jknC45mZmbi2VMrSmLm5OU0hhJnDhaRAZ4Vwu7MtW4LSopeWlmJ5qFQq4fj4OLerGERma/FaHMsEWFhYiMGhiLS7yuZ2c3MTr93pdPqEXF1dxTbKyo6hIJYu3vPS7sj2p13C5JAUUsz8rBAGgG3ZewYDyTYGNdX2VquVOxezkqWr7DrcVZTCUkgZlP7R3MqEcJ5sK94TOK9UtsrKXCqBt7e3FoI39vf34ziWlM88+VjIXypZeLtnpPtCtnx9VcivLFkXFxdDvam32+3cPSOVLwbpq0J+7E2dmcSStLW1FRfDcsJjLuI7j72dTqfvWhxTfE+glEHvLQwg55IkM9t5zJfQH/nYm63nRdJ7BAP70YthvV7PvRhyZw1jbnzKKpsbA132Yshk+ejFcG9vb6gyhi6EO4FBLVL8BMKdVJb1yIgZ9qeT9DmnSPETCXfee9f+7z6dGFgIfhAWAi0sBFpYCLSwEGhhIdDCQqCFhUALC4EWFgItLARaWAi0sBBoYSHQwkKghYVACwuBFhYCLSwEWlgItLAQaGEh0MJCoIWFQAsLgRYWAi0sBFpYCLSwEGhhIdDCQqCFhUALC4EWFgItLARaWAi0sBBoYSHQwkKghYVACwuBFhYCLSwEWvwBvp5lf+N7iLMAAAAASUVORK5CYII=" alt=""></p>
 
   </body>
 </html>

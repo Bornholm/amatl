@@ -5,6 +5,7 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/attrs"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/yuin/goldmark"
@@ -22,7 +23,6 @@ var (
 func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
-
 			extension.GFM,
 			&mermaid.Extender{
 				RenderMode: mermaid.RenderModeClient,
@@ -54,6 +54,10 @@ func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 					directive.WithTransformer(
 						toc.Type,
 						&toc.NodeTransformer{},
+					),
+					directive.WithTransformer(
+						attrs.Type,
+						&attrs.NodeTransformer{},
 					),
 				),
 				0,
