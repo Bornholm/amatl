@@ -145,7 +145,7 @@ palmas femina.
 
 ## Directives
 
-## `:attrs{attributes...}`
+### `:attrs{attributes...}`
 
 Add list of attributes to the next element.
 

@@ -345,6 +345,7 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 
 func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.Tasks {
 	return chromedp.Tasks{
+		enableLifeCycleEvents(),
 		chromedp.Navigate("about:blank"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			lctx, cancel := context.WithCancel(ctx)
@@ -353,22 +354,20 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			wg.Add(1)
 			chromedp.ListenTarget(lctx, func(ev interface{}) {
 				if _, ok := ev.(*page.EventLoadEventFired); ok {
-					// It's a good habit to remove the event listener if we don't need it anymore.
 					cancel()
 					wg.Done()
 				}
 			})
 			frameTree, err := page.GetFrameTree().Do(ctx)
 			if err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			if err := page.SetDocumentContent(frameTree.Frame.ID, string(html)).Do(ctx); err != nil {
-				return err
+				return errors.WithStack(err)
 			}
 			wg.Wait()
-			return nil
+			return waitFor(ctx, "networkIdle")
 		}),
-		chromedp.WaitReady("body"),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			buf, _, err := page.PrintToPDF().
 				WithPrintBackground(false).
@@ -387,6 +386,51 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			*res = buf
 			return nil
 		}),
+	}
+}
+
+func enableLifeCycleEvents() chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		err := page.Enable().Do(ctx)
+		if err != nil {
+			return err
+		}
+		err = page.SetLifecycleEventsEnabled(true).Do(ctx)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+// From https://github.com/chromedp/chromedp/issues/431#issuecomment-592950397
+// waitFor blocks until eventName is received.
+// Examples of events you can wait for:
+//
+//	init, DOMContentLoaded, firstPaint,
+//	firstContentfulPaint, firstImagePaint,
+//	firstMeaningfulPaintCandidate,
+//	load, networkAlmostIdle, firstMeaningfulPaint, networkIdle
+//
+// This is not super reliable, I've already found incidental cases where
+// networkIdle was sent before load. It's probably smart to see how
+func waitFor(ctx context.Context, eventName string) error {
+	ch := make(chan struct{})
+	cctx, cancel := context.WithCancel(ctx)
+	chromedp.ListenTarget(cctx, func(ev interface{}) {
+		switch e := ev.(type) {
+		case *page.EventLifecycleEvent:
+			if e.Name == eventName {
+				cancel()
+				close(ch)
+			}
+		}
+	})
+	select {
+	case <-ch:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
