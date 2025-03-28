@@ -38,6 +38,7 @@ const (
 	paramPDFMarginBottom = "pdf-margin-bottom"
 	paramPDFScale        = "pdf-scale"
 	paramPDFTimeout      = "pdf-timeout"
+	paramPDFBackground   = "pdf-background"
 )
 
 var (
@@ -91,6 +92,11 @@ var (
 		Name:  paramPDFTimeout,
 		Value: DefaultPDFTimeout,
 		Usage: "pdf generation timeout",
+	})
+	flagPDFBackground = altsrc.NewBoolFlag(&cli.BoolFlag{
+		Name:  paramPDFBackground,
+		Value: DefaultPDFBackground,
+		Usage: "pdf print background",
 	})
 )
 
@@ -158,6 +164,7 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 		flagPDFMarginBottom,
 		flagPDFScale,
 		flagPDFTimeout,
+		flagPDFBackground,
 	)
 
 	return withHTMLFlags(flags...)
@@ -220,6 +227,10 @@ func getPDFMargin(ctx *cli.Context) (top float64, right float64, bottom float64,
 
 func getPDFTimeout(ctx *cli.Context) time.Duration {
 	return ctx.Duration(paramPDFTimeout)
+}
+
+func getPDFBackground(ctx *cli.Context) bool {
+	return ctx.Bool(paramPDFBackground)
 }
 
 func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.InputSourceContext, error) {

@@ -34,6 +34,7 @@ func PDF() *cli.Command {
 			marginTop, marginRight, marginBottom, marginLeft := getPDFMargin(ctx)
 			scale := getPDFScale(ctx)
 			timeout := getPDFTimeout(ctx)
+			background := getPDFBackground(ctx)
 
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
@@ -61,6 +62,7 @@ func PDF() *cli.Command {
 					WithMarginLeft(marginLeft),
 					WithScale(scale),
 					WithTimeout(timeout),
+					WithBackground(background),
 				),
 			)
 

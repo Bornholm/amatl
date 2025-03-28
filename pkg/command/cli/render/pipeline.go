@@ -251,13 +251,15 @@ type PDFTransformerOptions struct {
 	MarginRight  float64
 	MarginBottom float64
 	Scale        float64
+	Background   bool
 	Timeout      time.Duration
 }
 
 const (
-	DefaultPDFMargin  float64       = 1
-	DefaultPDFScale   float64       = 1
-	DefaultPDFTimeout time.Duration = time.Minute
+	DefaultPDFMargin     float64       = 1
+	DefaultPDFScale      float64       = 1
+	DefaultPDFTimeout    time.Duration = time.Minute
+	DefaultPDFBackground bool          = true
 )
 
 type PDFTransformerOptionFunc func(opts *PDFTransformerOptions)
@@ -269,6 +271,7 @@ func NewPDFTransformerOptions(funcs ...PDFTransformerOptionFunc) *PDFTransformer
 		MarginRight:  DefaultPDFMargin,
 		MarginBottom: DefaultPDFMargin,
 		Scale:        DefaultPDFScale,
+		Background:   DefaultPDFBackground,
 		Timeout:      DefaultPDFTimeout,
 	}
 	for _, fn := range funcs {
@@ -310,6 +313,12 @@ func WithScale(scale float64) PDFTransformerOptionFunc {
 func WithTimeout(timeout time.Duration) PDFTransformerOptionFunc {
 	return func(opts *PDFTransformerOptions) {
 		opts.Timeout = timeout
+	}
+}
+
+func WithBackground(background bool) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.Background = background
 	}
 }
 
@@ -370,13 +379,13 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			buf, _, err := page.PrintToPDF().
-				WithPrintBackground(false).
 				WithDisplayHeaderFooter(false).
 				WithPreferCSSPageSize(true).
 				WithMarginRight(centimetersToInches(opts.MarginRight)).
 				WithMarginTop(centimetersToInches(opts.MarginTop)).
 				WithMarginBottom(centimetersToInches(opts.MarginBottom)).
 				WithMarginLeft(centimetersToInches(opts.MarginLeft)).
+				WithPrintBackground(opts.Background).
 				WithScale(opts.Scale).
 				Do(ctx)
 			if err != nil {
