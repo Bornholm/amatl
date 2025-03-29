@@ -253,6 +253,7 @@ type PDFTransformerOptions struct {
 	Scale        float64
 	Background   bool
 	Timeout      time.Duration
+	ExecPath     string
 }
 
 const (
@@ -260,6 +261,7 @@ const (
 	DefaultPDFScale      float64       = 1
 	DefaultPDFTimeout    time.Duration = time.Minute
 	DefaultPDFBackground bool          = true
+	DefaultPDFExecPath   string        = ""
 )
 
 type PDFTransformerOptionFunc func(opts *PDFTransformerOptions)
@@ -273,6 +275,7 @@ func NewPDFTransformerOptions(funcs ...PDFTransformerOptionFunc) *PDFTransformer
 		Scale:        DefaultPDFScale,
 		Background:   DefaultPDFBackground,
 		Timeout:      DefaultPDFTimeout,
+		ExecPath:     DefaultPDFExecPath,
 	}
 	for _, fn := range funcs {
 		fn(opts)
@@ -322,6 +325,12 @@ func WithBackground(background bool) PDFTransformerOptionFunc {
 	}
 }
 
+func WithExecPath(execPath string) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.ExecPath = execPath
+	}
+}
+
 func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 	opts := NewPDFTransformerOptions(funcs...)
 
@@ -329,10 +338,21 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
 			data := payload.GetData()
 
-			ctx, timeoutCancel := context.WithTimeout(context.Background(), opts.Timeout)
+			allocatorOptions := chromedp.DefaultExecAllocatorOptions[:]
+
+			if opts.ExecPath != "" {
+				allocatorOptions = append(allocatorOptions, chromedp.ExecPath(opts.ExecPath))
+			}
+
+			allocatorCtx, allocatorCtxCancel := chromedp.NewExecAllocator(context.Background(),
+				allocatorOptions...,
+			)
+			defer allocatorCtxCancel()
+
+			timeoutCtx, timeoutCancel := context.WithTimeout(allocatorCtx, opts.Timeout)
 			defer timeoutCancel()
 
-			ctx, cancel := chromedp.NewContext(ctx)
+			ctx, cancel := chromedp.NewContext(timeoutCtx)
 			defer cancel()
 
 			var output []byte

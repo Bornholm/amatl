@@ -39,6 +39,7 @@ const (
 	paramPDFScale        = "pdf-scale"
 	paramPDFTimeout      = "pdf-timeout"
 	paramPDFBackground   = "pdf-background"
+	paramPDFExecPath     = "pdf-exec-path"
 )
 
 var (
@@ -97,6 +98,11 @@ var (
 		Name:  paramPDFBackground,
 		Value: DefaultPDFBackground,
 		Usage: "pdf print background",
+	})
+	flagPDFExecPath = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramPDFExecPath,
+		Value: DefaultPDFExecPath,
+		Usage: "pdf crhomium executable path",
 	})
 )
 
@@ -165,6 +171,7 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 		flagPDFScale,
 		flagPDFTimeout,
 		flagPDFBackground,
+		flagPDFExecPath,
 	)
 
 	return withHTMLFlags(flags...)
@@ -231,6 +238,10 @@ func getPDFTimeout(ctx *cli.Context) time.Duration {
 
 func getPDFBackground(ctx *cli.Context) bool {
 	return ctx.Bool(paramPDFBackground)
+}
+
+func getPDFExecPath(ctx *cli.Context) string {
+	return ctx.String(paramPDFExecPath)
 }
 
 func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.InputSourceContext, error) {
