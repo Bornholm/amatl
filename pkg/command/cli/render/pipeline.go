@@ -380,11 +380,15 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			lctx, cancel := context.WithCancel(ctx)
 			defer cancel()
 			var wg sync.WaitGroup
-			wg.Add(1)
-			chromedp.ListenTarget(lctx, func(ev interface{}) {
-				if _, ok := ev.(*page.EventLoadEventFired); ok {
-					cancel()
+			wg.Add(2)
+			chromedp.ListenTarget(lctx, func(e any) {
+				switch evt := e.(type) {
+				case *page.EventLoadEventFired:
 					wg.Done()
+				case *page.EventLifecycleEvent:
+					if evt.Name == "networkIdle" {
+						wg.Done()
+					}
 				}
 			})
 			frameTree, err := page.GetFrameTree().Do(ctx)
@@ -395,7 +399,7 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 				return errors.WithStack(err)
 			}
 			wg.Wait()
-			return waitFor(ctx, "networkIdle")
+			return nil
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			buf, _, err := page.PrintToPDF().
@@ -429,37 +433,6 @@ func enableLifeCycleEvents() chromedp.ActionFunc {
 			return err
 		}
 		return nil
-	}
-}
-
-// From https://github.com/chromedp/chromedp/issues/431#issuecomment-592950397
-// waitFor blocks until eventName is received.
-// Examples of events you can wait for:
-//
-//	init, DOMContentLoaded, firstPaint,
-//	firstContentfulPaint, firstImagePaint,
-//	firstMeaningfulPaintCandidate,
-//	load, networkAlmostIdle, firstMeaningfulPaint, networkIdle
-//
-// This is not super reliable, I've already found incidental cases where
-// networkIdle was sent before load. It's probably smart to see how
-func waitFor(ctx context.Context, eventName string) error {
-	ch := make(chan struct{})
-	cctx, cancel := context.WithCancel(ctx)
-	chromedp.ListenTarget(cctx, func(ev interface{}) {
-		switch e := ev.(type) {
-		case *page.EventLifecycleEvent:
-			if e.Name == eventName {
-				cancel()
-				close(ch)
-			}
-		}
-	})
-	select {
-	case <-ch:
-		return nil
-	case <-ctx.Done():
-		return ctx.Err()
 	}
 }
 
