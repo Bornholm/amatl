@@ -3,10 +3,10 @@ package render
 import (
 	"bytes"
 	"context"
-	"html/template"
 	"net/url"
 	"path/filepath"
 	"sync"
+	"text/template"
 	"time"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
