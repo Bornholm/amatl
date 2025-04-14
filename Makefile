@@ -1,6 +1,6 @@
 GORELEASER_ARGS ?= --snapshot --clean
 
-AMATL_LATEST_VERSION ?= $(shell git describe --abbrev=0)
+AMATL_LATEST_VERSION ?= $(shell git describe --tags --abbrev=0)
 
 build:
 	CGO_ENABLED=0 go build -o bin/amatl ./cmd/amatl

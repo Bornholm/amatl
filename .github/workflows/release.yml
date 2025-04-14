@@ -1,8 +1,6 @@
 name: release
 
 on:
-  workflow_dispatch:
-  pull_request:
   push:
     tags: ["v*"]
 
@@ -33,6 +31,7 @@ jobs:
           args: release --clean ${{ env.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: git fetch --tags --force
       - run: make website
       - name: Publish Github pages
         uses: JamesIves/github-pages-deploy-action@v4
