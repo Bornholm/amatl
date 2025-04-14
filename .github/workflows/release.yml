@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    tags: ['v*']
+    tags: ["v*"]
 
 permissions:
   contents: write
@@ -33,3 +33,10 @@ jobs:
           args: release --clean ${{ env.flags }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: make website
+      - name: Publish Github pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist/website
+          branch: gh-pages
+          token: ${{ secrets.GITHUB_TOKEN }}

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Masterminds/sprig/v3"
@@ -18,10 +19,103 @@ import (
 
 func DefaultFuncs(resolver resolver.Resolver) template.FuncMap {
 	funcs := sprig.FuncMap()
+	funcs["htmlQueryFirst"] = htmlQueryFirst
 	funcs["htmlQueryAll"] = htmlQueryAll
 	funcs["htmlSplit"] = htmlSplit
+	funcs["htmlRemove"] = htmlRemove
+	funcs["htmlAddAttr"] = htmlAddAttr
+	funcs["htmlTextContent"] = htmlTextContent
 	funcs["resolve"] = getResolveFunc(resolver)
 	return funcs
+}
+
+func htmlRemove(rawHTML template.HTML, query string) (template.HTML, error) {
+	buff := bytes.NewBuffer([]byte(rawHTML))
+
+	root, err := html.Parse(buff)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	selector, err := cascadia.Compile(query)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	nodes := selector.MatchAll(root)
+
+	for _, n := range nodes {
+		var el bytes.Buffer
+		if err := html.Render(&el, n); err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		n.Parent.RemoveChild(n)
+	}
+
+	var rest bytes.Buffer
+	if err := html.Render(&rest, root); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return template.HTML(rest.String()), nil
+}
+
+func htmlTextContent(rawHTML template.HTML, query string) (string, error) {
+	buff := bytes.NewBuffer([]byte(rawHTML))
+
+	root, err := html.Parse(buff)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	selector, err := cascadia.Compile(query)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	nodes := selector.MatchAll(root)
+
+	var sb strings.Builder
+	for _, n := range nodes {
+		err := walk(n, func(n *html.Node) error {
+			if n.Type == html.TextNode {
+				sb.WriteString(n.Data)
+			}
+			return nil
+		})
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+	}
+
+	return sb.String(), nil
+}
+
+func htmlQueryFirst(rawHTML template.HTML, query string) (template.HTML, error) {
+	buff := bytes.NewBuffer([]byte(rawHTML))
+
+	root, err := html.Parse(buff)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	selector, err := cascadia.Compile(query)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	first := selector.MatchFirst(root)
+	if first == nil {
+		return "", nil
+	}
+
+	var el bytes.Buffer
+	if err := html.Render(&el, first); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return template.HTML(el.String()), nil
 }
 
 func htmlQueryAll(rawHTML template.HTML, query string) ([]template.HTML, error) {
@@ -50,6 +144,49 @@ func htmlQueryAll(rawHTML template.HTML, query string) ([]template.HTML, error) 
 	}
 
 	return elements, nil
+}
+
+func htmlAddAttr(rawHTML template.HTML, query string, key string, value string) (template.HTML, error) {
+	buff := bytes.NewBuffer([]byte(rawHTML))
+
+	root, err := html.Parse(buff)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	selector, err := cascadia.Compile(query)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	nodes := selector.MatchAll(root)
+
+	for _, n := range nodes {
+		found := false
+		for _, attr := range n.Attr {
+			if attr.Key != key {
+				continue
+			}
+
+			attr.Val += " " + value
+			found = true
+			break
+		}
+		if !found {
+			n.Attr = append(n.Attr, html.Attribute{
+				Key: key,
+				Val: value,
+			})
+		}
+
+	}
+
+	var updated bytes.Buffer
+	if err := html.Render(&updated, root); err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return template.HTML(updated.String()), nil
 }
 
 func htmlSplit(rawHTML template.HTML, query string) ([]template.HTML, error) {
@@ -157,4 +294,20 @@ func getResolveFunc(resolver resolver.Resolver) func(ctx context.Context, rawURL
 
 		return template.URL(dataURL.String()), nil
 	}
+}
+
+func walk(n *html.Node, fn func(n *html.Node) error) error {
+	if n.FirstChild != nil {
+		if err := walk(n.FirstChild, fn); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	if n.NextSibling != nil {
+		if err := walk(n.NextSibling, fn); err != nil {
+			return errors.WithStack(err)
+		}
+	}
+
+	return nil
 }

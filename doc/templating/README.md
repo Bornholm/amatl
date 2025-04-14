@@ -1,4 +1,4 @@
-# Templating
+# Variables and templating
 
 > **Available for:** `Markdown`, `HTML`, `PDF`
 
@@ -8,16 +8,21 @@ To activate this functionality, simply utilize the `--vars` option along with an
 
 For instance, consider the following command:
 
-```
+```shell
 echo '{"foo":"bar"}' | amatl render pdf --vars stdin://  my-doc.md
 ```
 
 In `my-doc.md`, you can incorporate the injected value as follows:
 
+<!--
+In the following example, the expected template delimiters are `{‎‎{` and `}‎}` (without the space in between).
+They are escaped here for the website https://bornholm.github.io/amatl/.
+-->
+
 ```markdown
 # My document
 
-Here my value will be replaced: {{ .Vars.foo }}
+Here my value will be replaced: {{"{{"}} .Vars.foo {{"}}"}}
 ```
 
 For added convenience, amatl provides access to the [sprig](https://masterminds.github.io/sprig/) function library within templates.

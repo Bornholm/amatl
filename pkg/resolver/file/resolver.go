@@ -20,6 +20,7 @@ func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, erro
 
 	// Handle relative "urls"
 	workDir := resolver.ContextWorkDir(ctx)
+
 	if workDir != nil && !filepath.IsAbs(path) {
 		absURL := workDir.JoinPath(path)
 		if absURL.Scheme != Scheme && absURL.Scheme != SchemeAlt {

@@ -2,13 +2,17 @@
 
 > **Available for:** `Markdown`, `HTML`, `PDF`
 
-`amatl` extends the CommonMark syntax with what we call "directives".
+Amatl extends the CommonMark syntax with what we call "directives".
 
 A directive takes this form:
 
 ```
+
 :directive{attr="value1", attr="value2", ...}
+
 ```
+
+Please take note of the linefeed before and after the directive. **They are required**.
 
 Each directive triggers a specific behavior based on its type.
 

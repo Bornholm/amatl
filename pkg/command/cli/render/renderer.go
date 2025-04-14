@@ -15,6 +15,8 @@ import (
 	mermaidRenderer "github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/mermaid"
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/node"
 	"go.abhg.dev/goldmark/mermaid"
+
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 )
 
 func newMarkdownRenderer() renderer.Renderer {
@@ -63,7 +65,12 @@ func newHTMLRenderer() renderer.Renderer {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
-			highlighting.Highlighting,
+			highlighting.NewHighlighting(
+				highlighting.WithStyle("nord"),
+				highlighting.WithFormatOptions(
+					chromahtml.WithLineNumbers(false),
+				),
+			),
 			&mermaid.Extender{
 				RenderMode: mermaid.RenderModeClient,
 			},

@@ -1,1 +1,2 @@
 pkg/markdown/renderer/testdata/renderer/markdown/*.md
+pkg/html/layout/resolver/amatl/templates/*.html
