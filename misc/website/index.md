@@ -36,7 +36,7 @@ menu:
 
 :attrs{class="logo"}
 
-![](../misc/resources/logo.svg)
+![](../resources/logo.svg)
 
 ## What's Amatl ?
 

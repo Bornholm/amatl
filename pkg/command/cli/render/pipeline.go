@@ -16,6 +16,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/pkg/errors"
+	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 )
 
@@ -195,10 +196,20 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			reader := text.NewReader(data)
 
-			parser := newParser(opts.SourceURL, true)
-			document := parser.Parse(reader)
-
 			ctx := context.Background()
+
+			sourceDir := func(u url.URL) *url.URL {
+				return &u
+			}(*opts.SourceURL)
+			sourceDir.Path = filepath.Dir(sourceDir.Path)
+
+			ctx = resolver.WithWorkDir(ctx, sourceDir)
+
+			parse := newParser(opts.SourceURL, true)
+			pc := parser.NewContext()
+			pipeline.WithContext(ctx, pc)
+
+			document := parse.Parse(reader, parser.WithContext(pc))
 
 			meta, ok := pipeline.GetAttribute[map[string]any](payload, attrMeta)
 			if !ok {

@@ -1,6 +1,6 @@
 GORELEASER_ARGS ?= --snapshot --clean
 
-AMATL_VERSION ?= $(shell git describe --always)
+AMATL_LATEST_VERSION ?= $(shell git describe --abbrev=0)
 
 build:
 	CGO_ENABLED=0 go build -o bin/amatl ./cmd/amatl
@@ -16,4 +16,4 @@ example-%: build
 
 website: build
 	mkdir -p dist/website
-	echo '{"amatlVersion":"$(AMATL_VERSION)"}' | bin/amatl render html --vars stdin:// --html-layout amatl://website.html -o ./dist/website/index.html ./misc/website/index.md
+	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl render html --vars stdin:// --html-layout amatl://website.html -o ./dist/website/index.html ./misc/website/index.md

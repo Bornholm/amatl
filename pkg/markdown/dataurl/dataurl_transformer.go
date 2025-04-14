@@ -1,11 +1,12 @@
 package dataurl
 
 import (
-	"context"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
+	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
 	"github.com/vincent-petithory/dataurl"
@@ -19,7 +20,7 @@ type Transformer struct {
 
 // Transform implements parser.ASTTransformer.
 func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parser.Context) {
-	ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	err := ast.Walk(node, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
@@ -36,7 +37,12 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 			return ast.WalkStop, errors.WithStack(err)
 		}
 
-		resourceReader, err := resolver.Resolve(context.Background(), resourceURL)
+		ctx, err := pipeline.FromParserContext(pc)
+		if err != nil {
+			return ast.WalkStop, errors.WithStack(err)
+		}
+
+		resourceReader, err := resolver.Resolve(ctx, resourceURL)
 		if err != nil {
 			return ast.WalkStop, errors.Wrapf(err, "could not resolve resource '%s'", destination)
 		}
@@ -53,12 +59,20 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 		}
 
 		mimeType := http.DetectContentType(data)
+
+		if strings.HasSuffix(resourceURL.Path, ".svg") {
+			mimeType = "image/svg+xml"
+		}
+
 		dataURL := dataurl.New(data, mimeType)
 
 		image.Destination = []byte(dataURL.String())
 
 		return ast.WalkContinue, nil
 	})
+	if err != nil {
+		panic(errors.WithStack(err))
+	}
 }
 
 var _ parser.ASTTransformer = &Transformer{}
