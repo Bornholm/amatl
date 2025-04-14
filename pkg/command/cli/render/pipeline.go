@@ -3,6 +3,7 @@ package render
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"net/url"
 	"path/filepath"
 	"sync"
@@ -59,7 +60,7 @@ func WithFuncs(funcs template.FuncMap) TemplateTransformerOptionFunc {
 func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middleware {
 	opts := NewTemplateTransformerOptions(funcs...)
 	return func(next pipeline.Transformer) pipeline.Transformer {
-		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
 			data := payload.GetData()
 
 			tmpl, err := template.New("").Funcs(opts.Funcs).Parse(string(data))
@@ -88,7 +89,7 @@ func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middlew
 
 			payload.SetData(doc.Bytes())
 
-			if err := next.Transform(payload); err != nil {
+			if err := next.Transform(ctx, payload); err != nil {
 				return errors.WithStack(err)
 			}
 
@@ -120,13 +121,17 @@ func WithSourceURL(sourceURL *url.URL) MarkdownTransformerOptionFunc {
 func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middleware {
 	opts := NewMarkdownTransformerOptions(funcs...)
 	return func(next pipeline.Transformer) pipeline.Transformer {
-		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
+			slog.DebugContext(ctx, "entering markdown middleware")
+
 			data := payload.GetData()
 
 			reader := text.NewReader(data)
 
 			parse := newParser(opts.SourceURL, false)
 			render := newMarkdownRenderer()
+
+			slog.DebugContext(ctx, "parsing markdown file")
 
 			document := parse.Parse(reader)
 
@@ -141,9 +146,11 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 			meta := document.OwnerDocument().Meta()
 			payload.SetAttribute(attrMeta, meta)
 
-			if err := next.Transform(payload); err != nil {
+			if err := next.Transform(ctx, payload); err != nil {
 				return errors.WithStack(err)
 			}
+
+			slog.DebugContext(ctx, "exiting markdown middleware")
 
 			return nil
 		})
@@ -191,12 +198,12 @@ func WithLayoutVars(vars map[string]any) HTMLTransformerOptionFunc {
 func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 	opts := NewHTMLTransformerOptions(funcs...)
 	return func(next pipeline.Transformer) pipeline.Transformer {
-		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
+			slog.DebugContext(ctx, "entering html middleware")
+
 			data := payload.GetData()
 
 			reader := text.NewReader(data)
-
-			ctx := context.Background()
 
 			sourceDir := func(u url.URL) *url.URL {
 				return &u
@@ -208,6 +215,8 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 			parse := newParser(opts.SourceURL, true)
 			pc := parser.NewContext()
 			pipeline.WithContext(ctx, pc)
+
+			slog.DebugContext(ctx, "parsing markdown file")
 
 			document := parse.Parse(reader, parser.WithContext(pc))
 
@@ -235,6 +244,8 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			ctx = resolver.WithWorkDir(ctx, workDir)
 
+			slog.DebugContext(ctx, "rendering html layout", slog.String("layout", opts.LayoutURL))
+
 			err = layout.Render(
 				ctx, &doc, body.Bytes(),
 				layout.WithURL(opts.LayoutURL),
@@ -247,9 +258,11 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			payload.SetData(doc.Bytes())
 
-			if err := next.Transform(payload); err != nil {
+			if err := next.Transform(ctx, payload); err != nil {
 				return errors.WithStack(err)
 			}
+
+			slog.DebugContext(ctx, "exiting html middleware")
 
 			return nil
 		})
@@ -346,7 +359,9 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 	opts := NewPDFTransformerOptions(funcs...)
 
 	return func(next pipeline.Transformer) pipeline.Transformer {
-		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
+			slog.DebugContext(ctx, "entering pdf middleware")
+
 			data := payload.GetData()
 
 			allocatorOptions := chromedp.DefaultExecAllocatorOptions[:]
@@ -355,7 +370,7 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 				allocatorOptions = append(allocatorOptions, chromedp.ExecPath(opts.ExecPath))
 			}
 
-			allocatorCtx, allocatorCtxCancel := chromedp.NewExecAllocator(context.Background(),
+			allocatorCtx, allocatorCtxCancel := chromedp.NewExecAllocator(ctx,
 				allocatorOptions...,
 			)
 			defer allocatorCtxCancel()
@@ -368,15 +383,19 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 
 			var output []byte
 
+			slog.DebugContext(ctx, "rendering pdf with chrome", slog.Duration("timeout", opts.Timeout))
+
 			if err := chromedp.Run(ctx, printToPDF(data, &output, opts)); err != nil {
 				return errors.Wrap(err, "could not execute chrome")
 			}
 
 			payload.SetData(output)
 
-			if err := next.Transform(payload); err != nil {
+			if err := next.Transform(ctx, payload); err != nil {
 				return errors.WithStack(err)
 			}
+
+			slog.DebugContext(ctx, "exiting pdf middleware")
 
 			return nil
 		})
@@ -453,14 +472,14 @@ func centimetersToInches(cm float64) float64 {
 
 func ToggleableMiddleware(t pipeline.Transformer, enabled bool) pipeline.Middleware {
 	return func(next pipeline.Transformer) pipeline.Transformer {
-		return pipeline.TransformerFunc(func(payload *pipeline.Payload) error {
+		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
 			if enabled {
-				if err := t.Transform(payload); err != nil {
+				if err := t.Transform(ctx, payload); err != nil {
 					return errors.WithStack(err)
 				}
 			}
 
-			if err := next.Transform(payload); err != nil {
+			if err := next.Transform(ctx, payload); err != nil {
 				return errors.WithStack(err)
 			}
 

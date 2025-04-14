@@ -11,9 +11,9 @@ release:
 examples: example-document example-presentation
 
 example-%: build
-	bin/amatl render html --html-layout amatl://$*.html -o ./examples/$*/$*.html ./examples/$*/$*.md
-	bin/amatl render pdf --html-layout amatl://$*.html -o ./examples/$*/$*.pdf ./examples/$*/$*.md
+	bin/amatl --log-level debug render html --html-layout amatl://$*.html -o ./examples/$*/$*.html ./examples/$*/$*.md
+	bin/amatl --log-level debug render pdf --html-layout amatl://$*.html -o ./examples/$*/$*.pdf ./examples/$*/$*.md
 
 website: build
 	mkdir -p dist/website
-	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl render html --vars stdin:// --html-layout amatl://website.html -o ./dist/website/index.html ./misc/website/index.md
+	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl --log-level debug render html --vars stdin:// --html-layout amatl://website.html -o ./dist/website/index.html ./misc/website/index.md

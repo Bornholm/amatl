@@ -2,7 +2,9 @@ package render
 
 import (
 	"io"
+	"log/slog"
 
+	"github.com/Bornholm/amatl/pkg/log"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -68,9 +70,11 @@ func PDF() *cli.Command {
 				),
 			)
 
-			payload := pipeline.NewPayload(ctx.Context, source)
+			payload := pipeline.NewPayload(source)
 
-			if err := transformer.Transform(payload); err != nil {
+			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourceURL.String()))
+
+			if err := transformer.Transform(pipelineCtx, payload); err != nil {
 				return errors.WithStack(err)
 			}
 

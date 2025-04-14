@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 
+	"github.com/Bornholm/amatl/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 )
@@ -25,19 +26,25 @@ func Main(name string, usage string, commands ...*cli.Command) {
 			}
 
 			logLevel := ctx.String("log-level")
-
-			var programLevel = new(slog.LevelVar)
+			slogLevel := slog.LevelWarn
 
 			switch logLevel {
 			case "debug":
-				programLevel.Set(slog.LevelDebug)
+				slogLevel = slog.LevelDebug
 			case "info":
-				programLevel.Set(slog.LevelInfo)
+				slogLevel = slog.LevelInfo
 			case "warn":
-				programLevel.Set(slog.LevelWarn)
+				slogLevel = slog.LevelWarn
 			case "error":
-				programLevel.Set(slog.LevelError)
+				slogLevel = slog.LevelError
 			}
+
+			logger := slog.New(log.ContextHandler{
+				Handler: slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+					Level: slogLevel,
+				}),
+			})
+			slog.SetDefault(logger)
 
 			return nil
 		},

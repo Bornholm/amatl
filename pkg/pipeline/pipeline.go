@@ -32,7 +32,7 @@ func (p *Payload) Buffer() *bytes.Buffer {
 	return bytes.NewBuffer(p.data)
 }
 
-func NewPayload(ctx context.Context, data []byte) *Payload {
+func NewPayload(data []byte) *Payload {
 	if data == nil {
 		data = make([]byte, 0)
 	}
@@ -43,16 +43,16 @@ func NewPayload(ctx context.Context, data []byte) *Payload {
 	}
 }
 
-type TransformerFunc func(payload *Payload) error
+type TransformerFunc func(ctx context.Context, payload *Payload) error
 
-func (t TransformerFunc) Transform(payload *Payload) error {
-	return t(payload)
+func (t TransformerFunc) Transform(ctx context.Context, payload *Payload) error {
+	return t(ctx, payload)
 }
 
-var _ Transformer = TransformerFunc(func(payload *Payload) error { return nil })
+var _ Transformer = TransformerFunc(func(ctx context.Context, payload *Payload) error { return nil })
 
 type Transformer interface {
-	Transform(payload *Payload) error
+	Transform(ctx context.Context, payload *Payload) error
 }
 
 type Middleware func(next Transformer) Transformer
@@ -60,7 +60,7 @@ type Middleware func(next Transformer) Transformer
 func Pipeline(middlewares ...Middleware) Transformer {
 	slices.Reverse(middlewares)
 
-	var transformer Transformer = TransformerFunc(func(payload *Payload) error {
+	var transformer Transformer = TransformerFunc(func(ctx context.Context, payload *Payload) error {
 		return nil
 	})
 
