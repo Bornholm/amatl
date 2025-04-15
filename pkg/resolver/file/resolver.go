@@ -3,7 +3,6 @@ package file
 import (
 	"context"
 	"io"
-	"log/slog"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -35,8 +34,6 @@ func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, erro
 
 		path = absURL.Host + absURL.Path
 	}
-
-	slog.DebugContext(ctx, "resolving file url", slog.String("url", path))
 
 	file, err := os.Open(path)
 	if err != nil {

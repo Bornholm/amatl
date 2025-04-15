@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/url"
 
 	"github.com/pkg/errors"
@@ -20,6 +21,8 @@ func (r *Registry) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, er
 	if !exists {
 		return nil, errors.Wrapf(ErrSchemeNotRegistered, "could not resolve scheme '%s'", url.Scheme)
 	}
+
+	slog.DebugContext(ctx, "resolving url", slog.String("url", url.String()))
 
 	reader, err := resolver.Resolve(ctx, url)
 	if err != nil {

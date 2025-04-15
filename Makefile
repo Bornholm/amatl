@@ -16,4 +16,11 @@ example-%: build
 
 website: build
 	mkdir -p dist/website
-	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl --log-level debug render html --vars stdin:// --html-layout amatl://website.html -o ./dist/website/index.html ./misc/website/index.md
+	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl \
+		--log-level debug \
+		render html \
+		--link-replacements "file://$(PWD)::https://github.com/Bornholm/amatl/blob/master" \
+		--vars stdin:// \
+		--html-layout amatl://website.html \
+		-o ./dist/website/index.html \
+		./misc/website/index.md

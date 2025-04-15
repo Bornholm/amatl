@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"context"
+	"log/slog"
 	"net/url"
 )
 
@@ -13,6 +14,7 @@ const (
 )
 
 func WithWorkDir(ctx context.Context, url *url.URL) context.Context {
+	slog.DebugContext(ctx, "using work dir", slog.String("workdir", url.String()))
 	return context.WithValue(ctx, contextKeyWorkDir, url)
 }
 

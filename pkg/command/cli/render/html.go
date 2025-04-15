@@ -33,11 +33,17 @@ func HTML() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			linkReplacements, err := getLinkReplacements(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
 				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
+					WithLinkReplacements(linkReplacements),
 				),
 				TemplateMiddleware(
 					WithVars(vars),
@@ -47,6 +53,7 @@ func HTML() *cli.Command {
 				HTMLMiddleware(
 					WithMarkdownTransformerOptions(
 						WithSourceURL(sourceURL),
+						WithLinkReplacements(linkReplacements),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
 					WithLayoutVars(layoutVars),

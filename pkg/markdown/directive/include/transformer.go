@@ -1,13 +1,13 @@
 package include
 
 import (
-	"context"
 	"io"
 	"net/url"
 	"path/filepath"
 	"strconv"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
@@ -44,7 +44,12 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		return nil
 	}
 
-	resourceReader, err := resolver.Resolve(context.Background(), resourceURL)
+	ctx, err := pipeline.FromParserContext(pc)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	resourceReader, err := resolver.Resolve(ctx, resourceURL)
 	if err != nil {
 		return errors.Wrapf(err, "could not resolve resource '%s'", resourceURL)
 	}
@@ -64,10 +69,17 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedReader := text.NewReader(includedSource)
 
-	ctx := parser.NewContext()
-	setSourceURL(ctx, resourceURL)
+	sourceDir, err := pipeline.SourceDir(resourceURL)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 
-	includedNode := t.Parser.Parse(includedReader, parser.WithContext(ctx))
+	includeCtx := resolver.WithWorkDir(ctx, sourceDir)
+	includePC := pipeline.WithContext(includeCtx, parser.NewContext())
+
+	setSourceURL(includePC, resourceURL)
+
+	includedNode := t.Parser.Parse(includedReader, parser.WithContext(includePC))
 
 	if err := t.excludeSections(includedNode, fromHeadings); err != nil {
 		return errors.Wrapf(err, "could not exclude sections of included markdown resource '%s'", resourceURL)
@@ -156,6 +168,18 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) 
 		}
 
 		switch n := node.(type) {
+		case *ast.Link:
+			destination := string(n.Destination)
+
+			if isURL(destination) {
+				return ast.WalkContinue, nil
+			}
+
+			if !filepath.IsAbs(destination) {
+				destination = dirUrl.JoinPath(destination).String()
+			}
+
+			n.Destination = []byte(destination)
 		case *ast.Image:
 			destination := string(n.Destination)
 
@@ -295,5 +319,8 @@ func setSourceURL(ctx parser.Context, url *url.URL) {
 func urlDir(src *url.URL) *url.URL {
 	dir, _ := url.Parse(src.String())
 	dir.Path = filepath.Dir(src.Path)
+	if dir.Scheme == "" {
+		dir.Scheme = "file"
+	}
 	return dir
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive/attrs"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
+	"github.com/Bornholm/amatl/pkg/markdown/linkrewriter"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -20,7 +21,12 @@ var (
 	cache = include.NewSourceCache()
 )
 
-func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
+type ParserOptions struct {
+	EmbedLinkedResources bool
+	LinkReplacements     map[string]string
+}
+
+func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -65,10 +71,18 @@ func newParser(SourceURL *url.URL, embedLinkedResources bool) parser.Parser {
 		),
 	)
 
-	if embedLinkedResources {
+	if opts.EmbedLinkedResources {
 		parse.AddOptions(
 			parser.WithASTTransformers(
-				util.Prioritized(&dataurl.Transformer{}, 999),
+				util.Prioritized(&dataurl.Transformer{}, 990),
+			),
+		)
+	}
+
+	if opts.LinkReplacements != nil {
+		parse.AddOptions(
+			parser.WithASTTransformers(
+				util.Prioritized(linkrewriter.NewTransformer(opts.LinkReplacements), 999),
 			),
 		)
 	}

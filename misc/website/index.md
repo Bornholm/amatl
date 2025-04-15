@@ -40,7 +40,7 @@ menu:
 
 ## What's Amatl ?
 
-Amatl is a simple command-line utility that can help you to transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged HTML/PDF documents. For example, this simple website is [generated with Amatl itself](https://github.com/Bornholm/amatl/blob/master/misc/website/index.md).
+Amatl is a simple command-line utility that can help you to transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged HTML/PDF documents. For example, this simple website is [generated with Amatl itself](./index.md).
 
 > **Why the name `amatl` ?**
 >
@@ -48,7 +48,7 @@ Amatl is a simple command-line utility that can help you to transform your [Comm
 >
 > Source: [Wikipédia](https://en.wikipedia.org/wiki/Amate)
 
-Amatl is a free software project published under the [MIT licence](https://github.com/Bornholm/amatl/blob/master/LICENCE).
+Amatl is a free software project published under the [MIT licence](../../LICENCE).
 
 ## Getting started
 

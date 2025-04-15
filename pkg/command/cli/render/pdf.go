@@ -28,6 +28,11 @@ func PDF() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			linkReplacements, err := getLinkReplacements(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			layoutVars, err := getVars(ctx, paramHTMLLayoutVars)
 			if err != nil {
 				return errors.WithStack(err)
@@ -44,6 +49,7 @@ func PDF() *cli.Command {
 				// document to include potential directives
 				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
+					WithLinkReplacements(linkReplacements),
 				),
 				TemplateMiddleware(
 					WithVars(vars),
@@ -53,6 +59,7 @@ func PDF() *cli.Command {
 				HTMLMiddleware(
 					WithMarkdownTransformerOptions(
 						WithSourceURL(sourceURL),
+						WithLinkReplacements(linkReplacements),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
 					WithLayoutVars(layoutVars),

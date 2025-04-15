@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
@@ -28,18 +29,19 @@ import (
 )
 
 const (
-	paramVars            = "vars"
-	paramOutput          = "output"
-	paramHTMLLayout      = "html-layout"
-	paramHTMLLayoutVars  = "html-layout-vars"
-	paramPDFMarginTop    = "pdf-margin-top"
-	paramPDFMarginLeft   = "pdf-margin-left"
-	paramPDFMarginRight  = "pdf-margin-right"
-	paramPDFMarginBottom = "pdf-margin-bottom"
-	paramPDFScale        = "pdf-scale"
-	paramPDFTimeout      = "pdf-timeout"
-	paramPDFBackground   = "pdf-background"
-	paramPDFExecPath     = "pdf-exec-path"
+	paramVars             = "vars"
+	paramOutput           = "output"
+	paramLinkReplacements = "link-replacements"
+	paramHTMLLayout       = "html-layout"
+	paramHTMLLayoutVars   = "html-layout-vars"
+	paramPDFMarginTop     = "pdf-margin-top"
+	paramPDFMarginLeft    = "pdf-margin-left"
+	paramPDFMarginRight   = "pdf-margin-right"
+	paramPDFMarginBottom  = "pdf-margin-bottom"
+	paramPDFScale         = "pdf-scale"
+	paramPDFTimeout       = "pdf-timeout"
+	paramPDFBackground    = "pdf-background"
+	paramPDFExecPath      = "pdf-exec-path"
 )
 
 var (
@@ -63,6 +65,11 @@ var (
 		Name:  paramHTMLLayoutVars,
 		Usage: "enable layout templating and use url resource as json injected data",
 		Value: "",
+	})
+	flagLinkReplacements = altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
+		Name:  paramLinkReplacements,
+		Usage: "replace the given link prefix by the string provided, expected format <prefix>::<replacement>",
+		Value: cli.NewStringSlice(),
 	})
 	flagPDFMarginTop = altsrc.NewFloat64Flag(&cli.Float64Flag{
 		Name:  paramPDFMarginTop,
@@ -102,7 +109,7 @@ var (
 	flagPDFExecPath = altsrc.NewStringFlag(&cli.StringFlag{
 		Name:  paramPDFExecPath,
 		Value: DefaultPDFExecPath,
-		Usage: "pdf crhomium executable path",
+		Usage: "pdf chromium executable path",
 	})
 )
 
@@ -150,6 +157,7 @@ func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	return append([]cli.Flag{
 		flagVars,
 		flagOutput,
+		flagLinkReplacements,
 	}, flags...)
 }
 
@@ -189,6 +197,22 @@ func getOutput(ctx *cli.Context) (io.WriteCloser, error) {
 	}
 
 	return file, nil
+}
+
+func getLinkReplacements(ctx *cli.Context) (map[string]string, error) {
+	rawLinkReplacements := ctx.StringSlice(paramLinkReplacements)
+
+	linkReplacements := make(map[string]string)
+	for _, r := range rawLinkReplacements {
+		parts := strings.SplitN(r, "::", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf("invalid link replacement format '%s'", r)
+		}
+
+		linkReplacements[parts[0]] = parts[1]
+	}
+
+	return linkReplacements, nil
 }
 
 func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,8 +26,6 @@ func (*Resolver) Resolve(ctx context.Context, u *url.URL) (io.ReadCloser, error)
 	}
 
 	var buff bytes.Buffer
-
-	slog.DebugContext(ctx, "resolving http url", slog.String("url", u.String()))
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), &buff)
 	if err != nil {

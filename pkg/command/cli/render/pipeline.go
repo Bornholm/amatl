@@ -5,7 +5,6 @@ import (
 	"context"
 	"log/slog"
 	"net/url"
-	"path/filepath"
 	"sync"
 	"text/template"
 	"time"
@@ -99,13 +98,16 @@ func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middlew
 }
 
 type MarkdownTransformerOptions struct {
-	SourceURL *url.URL
+	SourceURL        *url.URL
+	LinkReplacements map[string]string
 }
 
 type MarkdownTransformerOptionFunc func(opts *MarkdownTransformerOptions)
 
 func NewMarkdownTransformerOptions(funcs ...MarkdownTransformerOptionFunc) *MarkdownTransformerOptions {
-	opts := &MarkdownTransformerOptions{}
+	opts := &MarkdownTransformerOptions{
+		LinkReplacements: make(map[string]string),
+	}
 	for _, fn := range funcs {
 		fn(opts)
 	}
@@ -115,6 +117,12 @@ func NewMarkdownTransformerOptions(funcs ...MarkdownTransformerOptionFunc) *Mark
 func WithSourceURL(sourceURL *url.URL) MarkdownTransformerOptionFunc {
 	return func(opts *MarkdownTransformerOptions) {
 		opts.SourceURL = sourceURL
+	}
+}
+
+func WithLinkReplacements(replacements map[string]string) MarkdownTransformerOptionFunc {
+	return func(opts *MarkdownTransformerOptions) {
+		opts.LinkReplacements = replacements
 	}
 }
 
@@ -128,12 +136,25 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 
 			reader := text.NewReader(data)
 
-			parse := newParser(opts.SourceURL, false)
+			sourceDir, err := pipeline.SourceDir(opts.SourceURL)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			ctx = resolver.WithWorkDir(ctx, sourceDir)
+
+			parse := newParser(opts.SourceURL, ParserOptions{
+				EmbedLinkedResources: false,
+				LinkReplacements:     opts.LinkReplacements,
+			})
 			render := newMarkdownRenderer()
 
 			slog.DebugContext(ctx, "parsing markdown file")
 
-			document := parse.Parse(reader)
+			pc := parser.NewContext()
+			pc = pipeline.WithContext(ctx, pc)
+
+			document := parse.Parse(reader, parser.WithContext(pc))
 
 			var doc bytes.Buffer
 
@@ -205,16 +226,19 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			reader := text.NewReader(data)
 
-			sourceDir := func(u url.URL) *url.URL {
-				return &u
-			}(*opts.SourceURL)
-			sourceDir.Path = filepath.Dir(sourceDir.Path)
+			sourceDir, err := pipeline.SourceDir(opts.SourceURL)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			ctx = resolver.WithWorkDir(ctx, sourceDir)
 
-			parse := newParser(opts.SourceURL, true)
+			parse := newParser(opts.SourceURL, ParserOptions{
+				EmbedLinkedResources: true,
+				LinkReplacements:     opts.LinkReplacements,
+			})
 			pc := parser.NewContext()
-			pipeline.WithContext(ctx, pc)
+			pc = pipeline.WithContext(ctx, pc)
 
 			slog.DebugContext(ctx, "parsing markdown file")
 
@@ -235,12 +259,15 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			var doc bytes.Buffer
 
-			workDir, err := url.Parse(opts.LayoutURL)
+			layoutURL, err := url.Parse(opts.LayoutURL)
 			if err != nil {
 				return errors.WithStack(err)
 			}
 
-			workDir.Path = filepath.Dir(workDir.Path)
+			workDir, err := pipeline.SourceDir(layoutURL)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			ctx = resolver.WithWorkDir(ctx, workDir)
 

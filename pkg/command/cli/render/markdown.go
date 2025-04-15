@@ -27,9 +27,15 @@ func Markdown() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			linkReplacements, err := getLinkReplacements(ctx)
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			transformer := pipeline.Pipeline(
 				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
+					WithLinkReplacements(linkReplacements),
 				),
 				TemplateMiddleware(
 					WithVars(vars),
