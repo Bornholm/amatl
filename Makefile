@@ -19,7 +19,7 @@ website: build
 	echo '{"amatlVersion":"$(AMATL_LATEST_VERSION)"}' | bin/amatl \
 		--log-level debug \
 		render html \
-		--link-replacements "file://$(PWD)::https://github.com/Bornholm/amatl/blob/master" \
+		--link-replacements "file://$(PWD)::https://github.com/Bornholm/amatl/blob/$(AMATL_LATEST_VERSION)" \
 		--vars stdin:// \
 		--html-layout amatl://website.html \
 		-o ./dist/website/index.html \

@@ -1,6 +1,6 @@
-# On Linux
+# 🐧 On Linux
 
-1. Download the latest Linux release: https://github.com/Bornholm/amatl/releases/tag/{{ .Vars.amatlVersion }}
+1. Visit the [latest release page](https://github.com/Bornholm/amatl/releases/tag/{{ .Vars.amatlVersion }}) or use the following `wget` command:
 
    ```shell
    wget https://github.com/Bornholm/amatl/releases/download/{{ .Vars.amatlVersion }}/amatl_{{ trimPrefix "v" .Vars.amatlVersion }}_linux_amd64.tar.gz

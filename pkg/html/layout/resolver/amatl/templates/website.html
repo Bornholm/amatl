@@ -26,7 +26,16 @@
                 <p class="menu-label">{{ get $menuItem "label" }}</p>
                 <ul class="menu-list">
                   {{ range $subItem := $menuItem.items }}
-                  <li><a href={{ default  "#" ( get $subItem "href" ) }}>{{ get $subItem "label" }}</a></li>
+                  <li>
+                    <a href={{ default  "#" ( get $subItem "href" ) }}>{{ get $subItem "label" }}</a>
+                    {{ if $subItem.items }}
+                    <ul>
+                      {{ range $subItem := $subItem.items }}
+                      <li><a href={{ default  "#" ( get $subItem "href" ) }}>{{ get $subItem "label" }}</a></li>
+                      {{ end }}
+                    </ul>
+                    {{ end }}
+                  </li>
                   {{ end }}
                 </ul>
               {{ end }}

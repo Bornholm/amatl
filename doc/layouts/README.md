@@ -2,40 +2,62 @@
 
 > **Available for:** `HTML`, `PDF`
 
-A layout is a HTML template that can be used to "decorates" your Markdown content.
-It permits multiples things:
+A **layout** is an HTML template that can be used to decorate your rendered Markdown content.
 
-- Insert content in front or after your Markdown content;
-- Style and transform your Markdown content to match your organization preferences;
-- Use layout-specific variables to transform/enhance its content.
+Layouts allow you to:
 
-`amatl` provides 2 base layouts:
+- Insert content before or after the main Markdown content.
+- Apply custom styling or structural transformations to match your organization's branding or formatting needs.
+- Use layout-specific variables to further enhance the output.
 
-- `amatl://document.html` - A layout to generate generic document in A4 format (used by default);
-- `amatl://presentation.html` - A presentation ("slides") layout;
+Amatl provides **three built-in layouts**, and you can also supply your own custom layout using the `--html-layout` flag.
 
-You can also use a custom layout passing the flag `--html-layout` to your command.
+## ✨ Built-in layouts
 
-## `amatl://document.html`
+### `amatl://document.html`
 
-### Example
+A clean, print-friendly layout designed for general documents (e.g. reports or papers), formatted in A4 by default.
 
-[See `../../examples/document.pdf`](../../examples/document/document.pdf)
+- **Default layout** for `HTML` and `PDF` outputs.
+- Best suited for structured, text-heavy documents.
 
-### Variables
+**Example:**  
+[📄 View sample document (PDF)](../../examples/document/document.pdf)
 
-#### `Title`
+**Variables:**
 
-The `Title` variable is used to defined the HTML document title.
+- `title`: Sets the HTML document title.
 
-## `amatl://presentation.html`
+### `amatl://presentation.html`
 
-### Example
+A layout for creating slide-style presentations from your Markdown content.
 
-[See `../../examples/presentation.pdf`](../../examples/presentation/presentation.pdf)
+**Example:**  
+[📊 View sample presentation (PDF)](../../examples/presentation/presentation.pdf)
 
-### Variables
+**Variables:**
 
-#### `Title`
+- `title`: Sets the HTML document title.
 
-The `Title` variable is used to defined the HTML document title.
+---
+
+### `amatl://website.html`
+
+A simple, responsive layout suitable for rendering Markdown as a web page.
+
+**Example:**  
+[🌐 Visit example website](https://bornholm.github.io/amatl/)
+
+**Variables:**
+
+- `title`: Sets the HTML document title.
+
+---
+
+## 🛠️ Using a custom layout
+
+To use a custom layout, provide the path or URL with the `--html-layout` flag:
+
+```sh
+amatl render markdown -o output.html --html-layout file://my-layout.html my-doc.md
+```

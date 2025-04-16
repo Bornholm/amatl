@@ -1,8 +1,9 @@
 # Documentation
 
-> **Warning:** Amatl is an opinionated tool. It makes certain choices that may not align with your workflow preferences.
->
-> For example, it endeavors to produce "independent" documents that do not depend on external resources. This means that linked resources, such as images, will be embedded within the final document.
+## General
+
+- Installation: [Linux](./install/linux.md) | [Windows](./install/windows.md) | [MacOS](./install/macos.md)
+- [Usage](./usage/README.md)
 
 ## Concepts
 
@@ -14,7 +15,3 @@
 ## Examples
 
 See [`examples`](../examples/README.md) directory.
-
-## How-tos
-
-> TODO

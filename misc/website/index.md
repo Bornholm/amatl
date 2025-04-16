@@ -5,8 +5,15 @@ menu:
     items:
       - label: Installation
         href: "#installation"
-      - label: Basic usage
-        href: "#basic-usage"
+        items:
+          - label: On Linux
+            href: "#-on-linux"
+          - label: On Windows
+            href: "#-on-windows"
+          - label: On MacOS
+            href: "#-on-macos"
+      - label: Usage
+        href: "#usage"
   - label: Features
     items:
       - label: "URL resolving"
@@ -15,13 +22,27 @@ menu:
         href: "#variables-and-templating"
       - label: "Directives"
         href: "#directives"
-
+        items:
+          - label: "include{}"
+            href: "#includeurlurl-fromheadingsheadinglevel-shiftheadingslevelshift"
+          - label: "toc{}"
+            href: "#tocminlevelminlevel-maxlevelmaxlevel"
+          - label: "attrs{}"
+            href: "#attrsattributes"
       - label: "Layouts"
         href: "#layouts"
-  - label: Tutorials
+  - label: How to
     items:
-      - label: "Writing your own layout"
+      - label: "Write your own layout"
+        href: "#write-your-own-layout"
       - label: "Share your configuration"
+        href: "#share-your-configuration"
+      - label: "Use in CI"
+        href: "#use-in-ci"
+  - label: Misc
+    items:
+      - label: Attributions
+        href: "#-attributions"
 ---
 
 <style>
@@ -40,7 +61,18 @@ menu:
 
 ## What's Amatl ?
 
-Amatl is a simple command-line utility that can help you to transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged HTML/PDF documents. For example, this simple website is [generated with Amatl itself](./index.md).
+Amatl is a simple command-line utility that can help you to transform your [CommonMark](https://commonmark.org/) (also known as [Markdown](https://fr.wikipedia.org/wiki/Markdown)) files into full-fledged HTML/PDF documents.
+
+For example, this simple website is [generated with Amatl itself](./index.md).
+
+### Features
+
+- Create document from local or remote resources via [URL resolving](#url-resolving);
+- Integrate [MermaidJS](https://mermaid.js.org/) diagrams et code blocks with syntax highlighting;
+- Use [custom directives](#directives) to include others documents or generate tables of content;
+- Use [pre-defined or custom layouts](#layouts) to transform your content into presentations, report, etc
+- Use [Go templating](#variables-and-templating) to inject dynamic data into your document;
+- Rewrite you relative links and embed external resources.
 
 > **Why the name `amatl` ?**
 >
@@ -48,7 +80,7 @@ Amatl is a simple command-line utility that can help you to transform your [Comm
 >
 > Source: [Wikipédia](https://en.wikipedia.org/wiki/Amate)
 
-Amatl is a free software project published under the [MIT licence](../../LICENCE).
+Amatl is a [free software project](https://github.com/Bornholm/amatl) published under the [MIT licence](../../LICENCE).
 
 ## Getting started
 
@@ -60,26 +92,47 @@ Amatl is a free software project published under the [MIT licence](../../LICENCE
 
 :include{url="../../doc/install/macos.md", shiftHeadings="3"}
 
-### Basic usage
+---
 
-> TODO
+:include{url="../../doc/usage/README.md", shiftHeadings="2"}
 
-## Features
+---
 
-:include{url="../../doc/url-resolving/README.md", shiftHeadings="2"}
+:include{url="../../doc/url-resolving/README.md", shiftHeadings="1"}
 
-:include{url="../../doc/templating/README.md", shiftHeadings="2"}
+---
 
-:include{url="../../doc/directives/README.md", shiftHeadings="2"}
+:include{url="../../doc/templating/README.md", shiftHeadings="1"}
 
-:include{url="../../doc/layouts/README.md", shiftHeadings="2"}
+---
 
-## Tutorials
+:include{url="../../doc/directives/README.md", shiftHeadings="1"}
 
-### Writing your own layout
+---
 
-> TODO
+:include{url="../../doc/layouts/README.md", shiftHeadings="1"}
+
+---
+
+## How to
+
+### Write your own layout
+
+> Coming soon...
 
 ### Share your configuration
 
-> TODO
+> Coming soon...
+
+### Use in CI
+
+> Coming soon...
+
+## 🙏 Attributions
+
+This project wouldn’t be possible without the incredible work of the open-source community. Special thanks to:
+
+- [`github.com/yuin/goldmark` and its satellites libraries](https://github.com/yuin/goldmark)
+- [`github.com/jgthms/bulma`](https://github.com/jgthms/bulma)
+
+**Thank you for your amazing work !**

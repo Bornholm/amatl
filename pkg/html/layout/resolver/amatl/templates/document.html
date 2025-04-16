@@ -1,6 +1,7 @@
 <html>
   <head>
-    <title>{{ .Vars.Title }}</title>
+    <title>{{ default ( get .Vars "title" ) ( get .Meta "title" ) ( (htmlTextContent .Body "h1:first-of-type") ) }}
+    </title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link

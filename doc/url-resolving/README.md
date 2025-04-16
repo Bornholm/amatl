@@ -1,15 +1,20 @@
 # URL Resolving
 
-Amatl utilizes a URL resolver to access various processed resources. It effectively manages the following schemes:
+Amatl provides a flexible URL resolver to access various types of resources. It supports the following URL schemes:
 
-- `file://` - Denoting local filesystem resources (paths without protocol scheme will also be interpreted as a file).
-- `http://` and `https://` - Indicating HTTP(S) resources.
-- `stdin://` - Data provided via `stdin`.
+- `file://` — Refers to local filesystem resources. Paths without a scheme are also interpreted as local files.
+- `http://` and `https://` — Used to access HTTP(S) resources.
+- `stdin://` — Refers to data piped in via standard input (`stdin`).
 
-As a general guideline, you can incorporate these types of URLs in all links or file paths, including those passed to the `render` command.
+These URL schemes can be used consistently across the application, including when specifying inputs for commands like `render`.
 
-> **Basic Authentication**
+> ### 🔐 Basic authentication
 >
-> Amatl supports HTTP [`Basic Auth`](https://en.wikipedia.org/wiki/Basic_access_authentication) for `http(s)://*` URLs by setting the environment variables `AMATL_HTTP_BASIC_AUTH_USERNAME` and `AMATL_HTTP_BASIC_AUTH_PASSWORD`.
+> Amatl supports HTTP [Basic Authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) for `http(s)://` URLs.
 >
-> If set, these credentials will automatically be used with all resolved URLs.
+> To enable it, set the following environment variables:
+>
+> - `AMATL_HTTP_BASIC_AUTH_USERNAME`
+> - `AMATL_HTTP_BASIC_AUTH_PASSWORD`
+>
+> When these variables are set, credentials are automatically applied to all HTTP(S) requests during URL resolution.
