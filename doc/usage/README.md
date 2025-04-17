@@ -5,7 +5,7 @@ Amatl's `render` command allows you to convert Markdown files into various outpu
 ## 🖥️ Generate an HTML file
 
 ```sh
-amatl render markdown -o output.html your-file.md
+amatl render html -o output.html your-file.md
 ```
 
 This will convert `your-file.md` into a standalone `output.html` file.
@@ -15,7 +15,7 @@ This will convert `your-file.md` into a standalone `output.html` file.
 > Note: PDF generation requires Chrome or Chromium to be installed on your system.
 
 ```sh
-amatl render markdown -o output.pdf your-file.md
+amatl render pdf -o output.pdf your-file.md
 ```
 
 This creates a `output.pdf` file from the specified Markdown input.
