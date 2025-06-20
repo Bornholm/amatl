@@ -14,6 +14,10 @@ func Register(scheme string, resolver Resolver) {
 	DefaultResolver.Register(scheme, resolver)
 }
 
+func SetDefault(scheme string) {
+	DefaultResolver.SetDefault(scheme)
+}
+
 func Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
 	reader, err := DefaultResolver.Resolve(ctx, url)
 	if err != nil {

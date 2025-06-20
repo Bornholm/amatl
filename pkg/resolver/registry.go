@@ -10,7 +10,8 @@ import (
 )
 
 type Registry struct {
-	resolvers map[string]Resolver
+	resolvers       map[string]Resolver
+	defaultResolver string
 }
 
 // Resolve implements Resolver.
@@ -19,7 +20,13 @@ func (r *Registry) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, er
 
 	resolver, exists := r.resolvers[url.Scheme]
 	if !exists {
-		return nil, errors.Wrapf(ErrSchemeNotRegistered, "could not resolve scheme '%s'", url.Scheme)
+		if r.defaultResolver != "" {
+			resolver = r.resolvers[r.defaultResolver]
+		}
+
+		if resolver == nil {
+			return nil, errors.Wrapf(ErrSchemeNotRegistered, "could not resolve url '%s'", url.String())
+		}
 	}
 
 	slog.DebugContext(ctx, "resolving url", slog.String("url", url.String()))
@@ -34,6 +41,10 @@ func (r *Registry) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, er
 
 func (r *Registry) Register(scheme string, resolver Resolver) {
 	r.resolvers[scheme] = resolver
+}
+
+func (r *Registry) SetDefault(scheme string) {
+	r.defaultResolver = scheme
 }
 
 func (r *Registry) Extend(extensions ...func() (scheme string, resolver Resolver)) *Registry {

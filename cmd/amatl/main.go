@@ -5,9 +5,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/command/cli"
 
 	// Import resolvers
-	_ "github.com/Bornholm/amatl/pkg/resolver/file"
-	_ "github.com/Bornholm/amatl/pkg/resolver/http"
-	_ "github.com/Bornholm/amatl/pkg/resolver/stdin"
+	_ "github.com/Bornholm/amatl/pkg/resolver/all"
 )
 
 func main() {

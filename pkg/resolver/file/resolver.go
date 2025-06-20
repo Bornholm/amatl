@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
@@ -16,7 +17,7 @@ type Resolver struct {
 
 // Resolve implements layout.Resolver.
 func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
-	path := url.Host + url.Path
+	path := toFilePath(url)
 
 	// Handle relative "urls"
 	workDir := resolver.ContextWorkDir(ctx)
@@ -32,7 +33,7 @@ func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, erro
 			return reader, nil
 		}
 
-		path = absURL.Host + absURL.Path
+		path = toFilePath(absURL)
 	}
 
 	file, err := os.Open(path)
@@ -41,6 +42,18 @@ func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, erro
 	}
 
 	return file, nil
+}
+
+func toFilePath(u *url.URL) string {
+	var path string
+
+	if u.Opaque != "" {
+		path = u.Scheme + `:\` + strings.ReplaceAll(u.Opaque, `\\`, `\`) // Windows path
+	} else {
+		path = u.Host + u.Path
+	}
+
+	return path
 }
 
 func NewResolver() *Resolver {
