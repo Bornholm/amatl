@@ -19,3 +19,9 @@
    ```
 
    You should see the list of commands and global options, confirming the installation was successful.
+
+> **Why does my virus-scanning software think the binary is infected?**
+>
+> This is a common occurrence, especially on Windows machines, and is almost always a false positive.
+>
+> [More informations on the official Go FAQ](https://go.dev/doc/faq#virus)
