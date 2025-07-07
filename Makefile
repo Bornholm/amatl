@@ -24,3 +24,5 @@ website: build
 		--html-layout amatl://website.html \
 		-o ./dist/website/index.html \
 		./misc/website/index.md
+
+include misc/make/*.mk

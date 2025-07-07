@@ -44,7 +44,7 @@ type Resolver struct {
 func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
 	filename := url.Host
 
-	file, err := templateFs.Open(filepath.Join("templates", filename))
+	file, err := templateFs.Open("templates/" + filename)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

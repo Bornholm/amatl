@@ -48,7 +48,7 @@ func toFilePath(u *url.URL) string {
 	var path string
 
 	if u.Opaque != "" {
-		path = u.Scheme + `:\` + strings.ReplaceAll(u.Opaque, `\\`, `\`) // Windows path
+		path = u.Scheme + `:` + strings.ReplaceAll(u.Opaque, `\\`, `\`) // Windows path
 	} else {
 		path = u.Host + u.Path
 	}
