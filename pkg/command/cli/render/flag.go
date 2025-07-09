@@ -300,7 +300,7 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 		return nil, errors.WithStack(err)
 	}
 
-	ext := filepath.Ext(url.Path)
+	ext := filepath.Ext(urlStr)
 	switch ext {
 	case ".json":
 		fallthrough
