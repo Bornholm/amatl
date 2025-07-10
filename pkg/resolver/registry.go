@@ -53,6 +53,8 @@ func (r *Registry) Extend(extensions ...func() (scheme string, resolver Resolver
 		registry.Register(scheme, resolver)
 	}
 
+	registry.SetDefault(r.defaultResolver)
+
 	for _, ext := range extensions {
 		scheme, resolver := ext()
 		registry.Register(scheme, resolver)
