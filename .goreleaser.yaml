@@ -1,30 +1,28 @@
-version: 1
+version: 2
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-- targets: [go_first_class]
-  mod_timestamp: '{{ .CommitTimestamp }}'
-  dir: ./cmd/amatl
-  flags:
-    # trims path
-    - -trimpath
-  ldflags:
-    # use commit date instead of current date as main.date
-    # only needed if you actually use those things in your main package, otherwise can be ignored.
-    - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }}
+  - targets: [go_first_class]
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    dir: ./cmd/amatl
+    flags:
+      # trims path
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{.Version}}
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 
 release:
-  name_template: 'v{{ .Version }}'
+  name_template: "v{{ .Version }}"

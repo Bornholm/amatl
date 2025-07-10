@@ -11,11 +11,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-func Main(name string, usage string, commands ...*cli.Command) {
+func Main(name string, version string, usage string, commands ...*cli.Command) {
 	app := &cli.App{
 		Name:     name,
 		Usage:    usage,
 		Commands: commands,
+		Version:  version,
 		Before: func(ctx *cli.Context) error {
 			workdir := ctx.String("workdir")
 			// Switch to new working directory if defined
