@@ -12,7 +12,7 @@ examples: example-document example-presentation
 
 example-%: build
 	bin/amatl --log-level debug render html --html-layout amatl://$*.html -o ./examples/$*/$*.html ./examples/$*/$*.md
-	bin/amatl --log-level debug render pdf --html-layout amatl://$*.html -o ./examples/$*/$*.pdf ./examples/$*/$*.md
+	bin/amatl --log-level debug render pdf --pdf-display-header-footer --html-layout amatl://$*.html -o ./examples/$*/$*.pdf ./examples/$*/$*.md
 
 website: build
 	mkdir -p dist/website

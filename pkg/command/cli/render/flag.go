@@ -29,19 +29,22 @@ import (
 )
 
 const (
-	paramVars             = "vars"
-	paramOutput           = "output"
-	paramLinkReplacements = "link-replacements"
-	paramHTMLLayout       = "html-layout"
-	paramHTMLLayoutVars   = "html-layout-vars"
-	paramPDFMarginTop     = "pdf-margin-top"
-	paramPDFMarginLeft    = "pdf-margin-left"
-	paramPDFMarginRight   = "pdf-margin-right"
-	paramPDFMarginBottom  = "pdf-margin-bottom"
-	paramPDFScale         = "pdf-scale"
-	paramPDFTimeout       = "pdf-timeout"
-	paramPDFBackground    = "pdf-background"
-	paramPDFExecPath      = "pdf-exec-path"
+	paramVars                   = "vars"
+	paramOutput                 = "output"
+	paramLinkReplacements       = "link-replacements"
+	paramHTMLLayout             = "html-layout"
+	paramHTMLLayoutVars         = "html-layout-vars"
+	paramPDFMarginTop           = "pdf-margin-top"
+	paramPDFMarginLeft          = "pdf-margin-left"
+	paramPDFMarginRight         = "pdf-margin-right"
+	paramPDFMarginBottom        = "pdf-margin-bottom"
+	paramPDFScale               = "pdf-scale"
+	paramPDFTimeout             = "pdf-timeout"
+	paramPDFBackground          = "pdf-background"
+	paramPDFExecPath            = "pdf-exec-path"
+	paramPDFDisplayHeaderFooter = "pdf-display-header-footer"
+	paramPDFHeaderTemplate      = "pdf-header-template"
+	paramPDFFooterTemplate      = "pdf-footer-template"
 )
 
 var (
@@ -110,6 +113,21 @@ var (
 		Name:  paramPDFExecPath,
 		Value: DefaultPDFExecPath,
 		Usage: "pdf chromium executable path",
+	})
+	flagPDFDisplayHeaderFooter = altsrc.NewBoolFlag(&cli.BoolFlag{
+		Name:  paramPDFDisplayHeaderFooter,
+		Usage: "pdf display header and footer",
+		Value: false,
+	})
+	flagPDFFooterTemplate = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramPDFFooterTemplate,
+		Usage: "pdf footer template",
+		Value: DefaultPDFFooterTemplate,
+	})
+	flagPDFFHeaderTemplate = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramPDFHeaderTemplate,
+		Usage: "pdf header template",
+		Value: DefaultPDFHeaderTemplate,
 	})
 )
 
@@ -180,6 +198,9 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 		flagPDFTimeout,
 		flagPDFBackground,
 		flagPDFExecPath,
+		flagPDFDisplayHeaderFooter,
+		flagPDFFHeaderTemplate,
+		flagPDFFooterTemplate,
 	)
 
 	return withHTMLFlags(flags...)
@@ -266,6 +287,12 @@ func getPDFBackground(ctx *cli.Context) bool {
 
 func getPDFExecPath(ctx *cli.Context) string {
 	return ctx.String(paramPDFExecPath)
+}
+
+func getPDFHeaderFooter(ctx *cli.Context) (bool, string, string) {
+	return ctx.Bool(paramPDFDisplayHeaderFooter),
+		ctx.String(paramPDFHeaderTemplate),
+		ctx.String(paramPDFFooterTemplate)
 }
 
 func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.InputSourceContext, error) {

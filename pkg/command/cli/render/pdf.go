@@ -43,6 +43,7 @@ func PDF() *cli.Command {
 			timeout := getPDFTimeout(ctx)
 			background := getPDFBackground(ctx)
 			execPath := getPDFExecPath(ctx)
+			displayHeaderFooter, headerTemplate, footerTemplate := getPDFHeaderFooter(ctx)
 
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
@@ -74,6 +75,9 @@ func PDF() *cli.Command {
 					WithTimeout(timeout),
 					WithBackground(background),
 					WithExecPath(execPath),
+					WithDisplayFooterHeader(displayHeaderFooter),
+					WithHeaderTemplate(headerTemplate),
+					WithFooterTemplate(footerTemplate),
 				),
 			)
 

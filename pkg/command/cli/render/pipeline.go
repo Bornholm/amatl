@@ -15,6 +15,7 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
@@ -297,36 +298,48 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 }
 
 type PDFTransformerOptions struct {
-	MarginTop    float64
-	MarginLeft   float64
-	MarginRight  float64
-	MarginBottom float64
-	Scale        float64
-	Background   bool
-	Timeout      time.Duration
-	ExecPath     string
+	MarginTop           float64
+	MarginLeft          float64
+	MarginRight         float64
+	MarginBottom        float64
+	Scale               float64
+	Background          bool
+	Timeout             time.Duration
+	ExecPath            string
+	DisplayHeaderFooter bool
+	HeaderTemplate      string
+	FooterTemplate      string
 }
 
 const (
-	DefaultPDFMargin     float64       = 1
-	DefaultPDFScale      float64       = 1
-	DefaultPDFTimeout    time.Duration = time.Minute
-	DefaultPDFBackground bool          = true
-	DefaultPDFExecPath   string        = ""
+	DefaultPDFMargin              float64       = 1
+	DefaultPDFScale               float64       = 1
+	DefaultPDFTimeout             time.Duration = time.Minute
+	DefaultPDFBackground          bool          = true
+	DefaultPDFExecPath            string        = ""
+	DefaultPDFDisplayHeaderFooter bool          = true
+	DefaultPDFHeaderTemplate      string        = ``
+	DefaultPDFFooterTemplate      string        = `
+		<div style="font-size:10px;width:100%;padding-left:{{ .MarginLeft }}cm;padding-right:{{ .MarginRight }}cm">
+			<span style="float:right"><span class="pageNumber"></span> / <span class="totalPages"></span></span>
+		</div>`
 )
 
 type PDFTransformerOptionFunc func(opts *PDFTransformerOptions)
 
 func NewPDFTransformerOptions(funcs ...PDFTransformerOptionFunc) *PDFTransformerOptions {
 	opts := &PDFTransformerOptions{
-		MarginTop:    DefaultPDFMargin,
-		MarginLeft:   DefaultPDFMargin,
-		MarginRight:  DefaultPDFMargin,
-		MarginBottom: DefaultPDFMargin,
-		Scale:        DefaultPDFScale,
-		Background:   DefaultPDFBackground,
-		Timeout:      DefaultPDFTimeout,
-		ExecPath:     DefaultPDFExecPath,
+		MarginTop:           DefaultPDFMargin,
+		MarginLeft:          DefaultPDFMargin,
+		MarginRight:         DefaultPDFMargin,
+		MarginBottom:        DefaultPDFMargin,
+		Scale:               DefaultPDFScale,
+		Background:          DefaultPDFBackground,
+		Timeout:             DefaultPDFTimeout,
+		ExecPath:            DefaultPDFExecPath,
+		DisplayHeaderFooter: DefaultPDFDisplayHeaderFooter,
+		HeaderTemplate:      DefaultPDFHeaderTemplate,
+		FooterTemplate:      DefaultPDFFooterTemplate,
 	}
 	for _, fn := range funcs {
 		fn(opts)
@@ -379,6 +392,24 @@ func WithBackground(background bool) PDFTransformerOptionFunc {
 func WithExecPath(execPath string) PDFTransformerOptionFunc {
 	return func(opts *PDFTransformerOptions) {
 		opts.ExecPath = execPath
+	}
+}
+
+func WithDisplayFooterHeader(displayHeaderFooter bool) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.DisplayHeaderFooter = displayHeaderFooter
+	}
+}
+
+func WithHeaderTemplate(headerTemplate string) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.HeaderTemplate = headerTemplate
+	}
+}
+
+func WithFooterTemplate(footerTemplate string) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.FooterTemplate = footerTemplate
 	}
 }
 
@@ -459,8 +490,32 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			return nil
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			headerTemplate, err := template.New("").Parse(opts.HeaderTemplate)
+			if err != nil {
+				return errors.Wrapf(err, "could not parse header template")
+			}
+
+			var header bytes.Buffer
+			if err := headerTemplate.Execute(&header, opts); err != nil {
+				return errors.Wrapf(err, "could not execute header template")
+			}
+
+			footerTemplate, err := template.New("").Parse(opts.FooterTemplate)
+			if err != nil {
+				return errors.Wrapf(err, "could not parse footer template")
+			}
+
+			var footer bytes.Buffer
+			if err := footerTemplate.Execute(&footer, opts); err != nil {
+				return errors.Wrapf(err, "could not execute footer template")
+			}
+
+			spew.Dump(opts)
+
 			buf, _, err := page.PrintToPDF().
-				WithDisplayHeaderFooter(false).
+				WithDisplayHeaderFooter(opts.DisplayHeaderFooter).
+				WithFooterTemplate(footer.String()).
+				WithHeaderTemplate(header.String()).
 				WithPreferCSSPageSize(true).
 				WithMarginRight(centimetersToInches(opts.MarginRight)).
 				WithMarginTop(centimetersToInches(opts.MarginTop)).
