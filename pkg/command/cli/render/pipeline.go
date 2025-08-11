@@ -15,7 +15,6 @@ import (
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
@@ -509,8 +508,6 @@ func printToPDF(html []byte, res *[]byte, opts *PDFTransformerOptions) chromedp.
 			if err := footerTemplate.Execute(&footer, opts); err != nil {
 				return errors.Wrapf(err, "could not execute footer template")
 			}
-
-			spew.Dump(opts)
 
 			buf, _, err := page.PrintToPDF().
 				WithDisplayHeaderFooter(opts.DisplayHeaderFooter).
