@@ -25,8 +25,10 @@ const (
 )
 
 type TemplateTransformerOptions struct {
-	Vars  map[string]any
-	Funcs template.FuncMap
+	Vars           map[string]any
+	Funcs          template.FuncMap
+	LeftDelimiter  string
+	RightDelimiter string
 }
 
 type TemplateTransformerOptionFunc func(opts *TemplateTransformerOptions)
@@ -56,13 +58,24 @@ func WithFuncs(funcs template.FuncMap) TemplateTransformerOptionFunc {
 	}
 }
 
+func WithDelimiters(left, right string) TemplateTransformerOptionFunc {
+	return func(opts *TemplateTransformerOptions) {
+		opts.LeftDelimiter = left
+		opts.RightDelimiter = right
+	}
+}
+
 func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middleware {
 	opts := NewTemplateTransformerOptions(funcs...)
 	return func(next pipeline.Transformer) pipeline.Transformer {
 		return pipeline.TransformerFunc(func(ctx context.Context, payload *pipeline.Payload) error {
 			data := payload.GetData()
 
-			tmpl, err := template.New("").Funcs(opts.Funcs).Parse(string(data))
+			tmpl := template.New("").
+				Funcs(opts.Funcs).
+				Delims(opts.LeftDelimiter, opts.RightDelimiter)
+
+			tmpl, err := tmpl.Parse(string(data))
 			if err != nil {
 				return errors.WithStack(err)
 			}

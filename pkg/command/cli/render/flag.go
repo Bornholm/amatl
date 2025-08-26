@@ -29,8 +29,10 @@ import (
 )
 
 const (
-	paramVars                   = "vars"
 	paramOutput                 = "output"
+	paramTemplateVars           = "vars"
+	paramTemplateLeftDelimiter  = "template-left-delimiter"
+	paramTemplateRightDelimiter = "template-right-delimiter"
 	paramLinkReplacements       = "link-replacements"
 	paramHTMLLayout             = "html-layout"
 	paramHTMLLayoutVars         = "html-layout-vars"
@@ -54,10 +56,20 @@ var (
 		Value:   "-",
 		Usage:   "output generated content to given file, '-' to write to stdout",
 	})
-	flagVars = altsrc.NewStringFlag(&cli.StringFlag{
-		Name:  paramVars,
+	flagTemplateVars = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramTemplateVars,
 		Value: "",
 		Usage: "enable templating and use url resource as json injected data",
+	})
+	flagTemplateLeftDelimiter = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramTemplateLeftDelimiter,
+		Value: "",
+		Usage: "override default templating left delimiter",
+	})
+	flagTemplateRightDelimiter = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramTemplateRightDelimiter,
+		Value: "",
+		Usage: "override default templating right delimiter",
 	})
 	flagHTMLLayout = altsrc.NewStringFlag(&cli.StringFlag{
 		Name:  paramHTMLLayout,
@@ -167,13 +179,21 @@ func getVars(ctx *cli.Context, param string) (map[string]any, error) {
 	return vars, nil
 }
 
+func getTemplateDelimiters(ctx *cli.Context) (string, string) {
+	left := ctx.String(paramTemplateLeftDelimiter)
+	right := ctx.String(paramTemplateRightDelimiter)
+	return left, right
+}
+
 func getHTMLLayout(ctx *cli.Context) string {
 	return ctx.String(paramHTMLLayout)
 }
 
 func withCommonFlags(flags ...cli.Flag) []cli.Flag {
 	return append([]cli.Flag{
-		flagVars,
+		flagTemplateVars,
+		flagTemplateLeftDelimiter,
+		flagTemplateRightDelimiter,
 		flagOutput,
 		flagLinkReplacements,
 	}, flags...)

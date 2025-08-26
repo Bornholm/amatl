@@ -23,10 +23,12 @@ func PDF() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			vars, err := getVars(ctx, paramVars)
+			vars, err := getVars(ctx, paramTemplateVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
+			leftDelimiter, rightDelimiter := getTemplateDelimiters(ctx)
 
 			linkReplacements, err := getLinkReplacements(ctx)
 			if err != nil {
@@ -54,6 +56,7 @@ func PDF() *cli.Command {
 				),
 				TemplateMiddleware(
 					WithVars(vars),
+					WithDelimiters(leftDelimiter, rightDelimiter),
 				),
 				// Render the consolidated document
 				// as HTML

@@ -22,10 +22,12 @@ func Markdown() *cli.Command {
 				return errors.WithStack(err)
 			}
 
-			vars, err := getVars(ctx, paramVars)
+			vars, err := getVars(ctx, paramTemplateVars)
 			if err != nil {
 				return errors.WithStack(err)
 			}
+
+			leftDelimiter, rightDelimiter := getTemplateDelimiters(ctx)
 
 			linkReplacements, err := getLinkReplacements(ctx)
 			if err != nil {
@@ -39,6 +41,7 @@ func Markdown() *cli.Command {
 				),
 				TemplateMiddleware(
 					WithVars(vars),
+					WithDelimiters(leftDelimiter, rightDelimiter),
 				),
 			)
 
