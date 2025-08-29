@@ -8,6 +8,8 @@ builds:
   - targets: [go_first_class]
     mod_timestamp: "{{ .CommitTimestamp }}"
     dir: ./cmd/amatl
+    env:
+      - CGO_ENABLED=0
     flags:
       # trims path
       - -trimpath
