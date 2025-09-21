@@ -9,6 +9,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -60,7 +61,9 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		}
 	}()
 
-	includedSource, err := io.ReadAll(resourceReader)
+	transformed := transform.NewNewlineReader(resourceReader)
+
+	includedSource, err := io.ReadAll(transformed)
 	if err != nil {
 		return errors.Wrapf(err, "could not read markdown resource '%s'", resourceURL)
 	}

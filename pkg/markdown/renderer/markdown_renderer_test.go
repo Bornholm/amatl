@@ -2,6 +2,7 @@ package markdown
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/node"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/andreyvit/diff"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark"
@@ -29,7 +31,15 @@ func TestMarkdonwRenderer(t *testing.T) {
 	for _, f := range files {
 		filename := filepath.Base(f)
 		t.Run(filename, func(t *testing.T) {
-			data, err := os.ReadFile(f)
+
+			file, err := os.Open(f)
+			if err != nil {
+				t.Fatalf("%+v", errors.WithStack(err))
+			}
+
+			transformed := transform.NewNewlineReader(file)
+
+			data, err := io.ReadAll(transformed)
 			if err != nil {
 				t.Fatalf("%+v", errors.WithStack(err))
 			}

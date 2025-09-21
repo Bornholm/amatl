@@ -15,6 +15,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
@@ -278,7 +279,9 @@ func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {
 		}
 	}()
 
-	source, err := io.ReadAll(reader)
+	transformed := transform.NewNewlineReader(reader)
+
+	source, err := io.ReadAll(transformed)
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}

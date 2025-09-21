@@ -53,7 +53,8 @@ func (l *LineIndentWriter) Write(b []byte) (n int, _ error) {
 			}
 		}
 
-		if c == NewLineChar[0] {
+		// Handle both Unix (\n) and Windows (\r\n) line endings
+		if c == NewLineChar[0] { // \n
 			if !l.WasIndentOnFirstWriteWritten() {
 				ns, err := l.Writer.Write(l.firstWriteExtraIndent)
 				n += ns
@@ -70,6 +71,23 @@ func (l *LineIndentWriter) Write(b []byte) (n int, _ error) {
 				return n, err
 			}
 			l.previousCharWasNewLine = true
+			continue
+		}
+
+		// Skip \r characters (carriage return) to handle Windows line endings
+		if c == '\r' {
+			// Skip the \r character but don't write it
+			if writtenFromB <= i {
+				// Write everything up to (but not including) the \r
+				if i > writtenFromB {
+					ns, err := l.Writer.Write(b[writtenFromB:i])
+					n += ns
+					if err != nil {
+						return n, err
+					}
+				}
+				writtenFromB = i + 1 // Skip the \r character
+			}
 			continue
 		}
 
