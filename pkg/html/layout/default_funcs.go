@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/andybalholm/cascadia"
 	"github.com/pkg/errors"
@@ -278,7 +279,9 @@ func getResolveFunc(resolver resolver.Resolver) func(ctx context.Context, rawURL
 
 		defer reader.Close()
 
-		data, err := io.ReadAll(reader)
+		transformed := transform.NewNewlineReader(reader)
+
+		data, err := io.ReadAll(transformed)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}

@@ -167,7 +167,9 @@ func getVars(ctx *cli.Context, param string) (map[string]any, error) {
 		}
 	}()
 
-	source, err := io.ReadAll(reader)
+	transformed := transform.NewNewlineReader(reader)
+
+	source, err := io.ReadAll(transformed)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -345,7 +347,9 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 		}
 	}()
 
-	data, err := io.ReadAll(reader)
+	transformed := transform.NewNewlineReader(reader)
+
+	data, err := io.ReadAll(transformed)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/pkg/errors"
 )
 
@@ -46,7 +47,9 @@ func TestResolver(t *testing.T) {
 
 			defer reader.Close()
 
-			data, err := io.ReadAll(reader)
+			transformed := transform.NewNewlineReader(reader)
+
+			data, err := io.ReadAll(transformed)
 			if err != nil {
 				t.Errorf("%+v", errors.WithStack(err))
 				return

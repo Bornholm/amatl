@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/pkg/errors"
 	"github.com/vincent-petithory/dataurl"
 	"github.com/yuin/goldmark/ast"
@@ -70,7 +71,9 @@ func (t *Transformer) toDataURL(ctx context.Context, destination string) (*datau
 		}
 	}()
 
-	data, err := io.ReadAll(resourceReader)
+	transformed := transform.NewNewlineReader(resourceReader)
+
+	data, err := io.ReadAll(transformed)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not read linked resource '%s'", destination)
 	}

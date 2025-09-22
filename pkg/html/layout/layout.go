@@ -8,6 +8,7 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/transform"
 	"github.com/pkg/errors"
 )
 
@@ -37,7 +38,9 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 		}
 	}()
 
-	rawTmpl, err := io.ReadAll(reader)
+	transformed := transform.NewNewlineReader(reader)
+
+	rawTmpl, err := io.ReadAll(transformed)
 	if err != nil {
 		return errors.WithStack(err)
 	}
