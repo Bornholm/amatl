@@ -46,6 +46,7 @@ func PDF() *cli.Command {
 			background := getPDFBackground(ctx)
 			execPath := getPDFExecPath(ctx)
 			displayHeaderFooter, headerTemplate, footerTemplate := getPDFHeaderFooter(ctx)
+			noSandbox := getPDFNoSandbox(ctx)
 
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
@@ -81,6 +82,7 @@ func PDF() *cli.Command {
 					WithDisplayFooterHeader(displayHeaderFooter),
 					WithHeaderTemplate(headerTemplate),
 					WithFooterTemplate(footerTemplate),
+					WithNoSandbox(noSandbox),
 				),
 			)
 

@@ -319,6 +319,7 @@ type PDFTransformerOptions struct {
 	Timeout             time.Duration
 	ExecPath            string
 	DisplayHeaderFooter bool
+	NoSandbox           bool
 	HeaderTemplate      string
 	FooterTemplate      string
 }
@@ -335,6 +336,7 @@ const (
 		<div style="font-size:10px;width:100%;padding-left:{{ .MarginLeft }}cm;padding-right:{{ .MarginRight }}cm">
 			<span style="float:right"><span class="pageNumber"></span> / <span class="totalPages"></span></span>
 		</div>`
+	DefaultPDFNoSandbox bool = false
 )
 
 type PDFTransformerOptionFunc func(opts *PDFTransformerOptions)
@@ -352,6 +354,7 @@ func NewPDFTransformerOptions(funcs ...PDFTransformerOptionFunc) *PDFTransformer
 		DisplayHeaderFooter: DefaultPDFDisplayHeaderFooter,
 		HeaderTemplate:      DefaultPDFHeaderTemplate,
 		FooterTemplate:      DefaultPDFFooterTemplate,
+		NoSandbox:           DefaultPDFNoSandbox,
 	}
 	for _, fn := range funcs {
 		fn(opts)
@@ -425,6 +428,12 @@ func WithFooterTemplate(footerTemplate string) PDFTransformerOptionFunc {
 	}
 }
 
+func WithNoSandbox(noSandbox bool) PDFTransformerOptionFunc {
+	return func(opts *PDFTransformerOptions) {
+		opts.NoSandbox = noSandbox
+	}
+}
+
 func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 	opts := NewPDFTransformerOptions(funcs...)
 
@@ -435,6 +444,10 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 			data := payload.GetData()
 
 			allocatorOptions := chromedp.DefaultExecAllocatorOptions[:]
+
+			if opts.NoSandbox {
+				allocatorOptions = append(allocatorOptions, chromedp.NoSandbox)
+			}
 
 			if opts.ExecPath != "" {
 				allocatorOptions = append(allocatorOptions, chromedp.ExecPath(opts.ExecPath))

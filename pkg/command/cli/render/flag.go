@@ -48,6 +48,7 @@ const (
 	paramPDFDisplayHeaderFooter = "pdf-display-header-footer"
 	paramPDFHeaderTemplate      = "pdf-header-template"
 	paramPDFFooterTemplate      = "pdf-footer-template"
+	paramPDFNoSandbox           = "pdf-no-sandbox"
 )
 
 var (
@@ -142,6 +143,11 @@ var (
 		Usage: "pdf header template",
 		Value: DefaultPDFHeaderTemplate,
 	})
+	flagPDFNoSandbox = altsrc.NewStringFlag(&cli.StringFlag{
+		Name:  paramPDFNoSandbox,
+		Usage: "disable chrome sandboxing",
+		Value: DefaultPDFHeaderTemplate,
+	})
 )
 
 func getVars(ctx *cli.Context, param string) (map[string]any, error) {
@@ -224,6 +230,7 @@ func withPDFFlags(flags ...cli.Flag) []cli.Flag {
 		flagPDFDisplayHeaderFooter,
 		flagPDFFHeaderTemplate,
 		flagPDFFooterTemplate,
+		flagPDFNoSandbox,
 	)
 
 	return withHTMLFlags(flags...)
@@ -318,6 +325,10 @@ func getPDFHeaderFooter(ctx *cli.Context) (bool, string, string) {
 	return ctx.Bool(paramPDFDisplayHeaderFooter),
 		ctx.String(paramPDFHeaderTemplate),
 		ctx.String(paramPDFFooterTemplate)
+}
+
+func getPDFNoSandbox(ctx *cli.Context) bool {
+	return ctx.Bool(paramPDFNoSandbox)
 }
 
 func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.InputSourceContext, error) {
