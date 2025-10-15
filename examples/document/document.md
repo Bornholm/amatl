@@ -156,7 +156,7 @@ Adding the `.my-rotated-image` to the next image.
 ```markdown
 :attrs{class="my-rotated-image"}
 
-![](https://placehold.co/100x100/png)
+![](./100x100.png)
 ```
 
 <style>
@@ -168,4 +168,4 @@ Adding the `.my-rotated-image` to the next image.
 
 :attrs{class="my-rotated-image"}
 
-![](https://placehold.co/100x100/png)
+![](./100x100.png)
