@@ -16,6 +16,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
+	"github.com/Bornholm/amatl/pkg/urlx"
 	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
@@ -392,14 +393,10 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 }
 
 func rewriteRelativeURL(fromURL *url.URL, values map[any]any) (map[any]any, error) {
-	fromURL.Path = filepath.Dir(fromURL.Path)
-
-	absPath, err := filepath.Abs(fromURL.Path)
+	sourceDir, err := urlx.Dir(fromURL)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	fromURL.Path = absPath
 
 	for key, rawValue := range values {
 		value, ok := rawValue.(string)
@@ -416,7 +413,12 @@ func rewriteRelativeURL(fromURL *url.URL, values map[any]any) (map[any]any, erro
 				continue
 			}
 
-			values[key] = fromURL.JoinPath(value).String()
+			abs, err := urlx.Join(sourceDir, value)
+			if err != nil {
+				return nil, errors.WithStack(err)
+			}
+
+			values[key] = abs.String()
 			continue
 		}
 

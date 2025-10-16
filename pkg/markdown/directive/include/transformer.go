@@ -10,6 +10,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
+	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -72,7 +73,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedReader := text.NewReader(includedSource)
 
-	sourceDir, err := pipeline.SourceDir(resourceURL)
+	sourceDir, err := urlx.Dir(resourceURL)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -164,8 +165,12 @@ func (t *NodeTransformer) shiftHeadings(root ast.Node, shift int) error {
 }
 
 func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) error {
-	dirUrl := urlDir(baseURL)
-	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+	dirURL, err := urlx.Dir(baseURL)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	err = ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
@@ -179,7 +184,12 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) 
 			}
 
 			if !filepath.IsAbs(destination) {
-				destination = dirUrl.JoinPath(destination).String()
+				destinationURL, err := urlx.Join(dirURL, destination)
+				if err != nil {
+					return ast.WalkStop, errors.WithStack(err)
+				}
+
+				destination = destinationURL.String()
 			}
 
 			n.Destination = []byte(destination)
@@ -191,7 +201,11 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) 
 			}
 
 			if !filepath.IsAbs(destination) {
-				newDestination := dirUrl.JoinPath(destination)
+				newDestination, err := urlx.Join(dirURL, destination)
+				if err != nil {
+					return ast.WalkStop, errors.WithStack(err)
+				}
+
 				destination = newDestination.String()
 			}
 
@@ -280,7 +294,10 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 		return "", nil, errors.WithStack(err)
 	}
 
-	baseDir := urlDir(baseURL)
+	baseDir, err := urlx.Dir(baseURL)
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
 
 	var resourceURL *url.URL
 
@@ -292,7 +309,10 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 		}
 
 		baseDir.Path = absPath
-		resourceURL = baseDir.JoinPath(rawURL)
+		resourceURL, err = urlx.Join(baseDir, rawURL)
+		if err != nil {
+			return "", nil, errors.WithStack(err)
+		}
 
 	default:
 		resourceURL, err = url.Parse(rawURL)
@@ -317,13 +337,4 @@ func getSourceURL(ctx parser.Context, defaultSourceURL *url.URL) *url.URL {
 
 func setSourceURL(ctx parser.Context, url *url.URL) {
 	ctx.Set(contextKeySourceURL, url)
-}
-
-func urlDir(src *url.URL) *url.URL {
-	dir, _ := url.Parse(src.String())
-	dir.Path = filepath.Dir(src.Path)
-	if dir.Scheme == "" {
-		dir.Scheme = "file"
-	}
-	return dir
 }

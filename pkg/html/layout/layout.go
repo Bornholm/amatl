@@ -9,6 +9,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
+	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 )
 
@@ -50,7 +51,12 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 		return errors.WithStack(err)
 	}
 
-	ctx = resolver.WithWorkDir(ctx, url.JoinPath("../"))
+	workDir, err := urlx.Join(url, "../")
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	ctx = resolver.WithWorkDir(ctx, workDir)
 
 	data := &layoutData{
 		Vars:    opts.Vars,

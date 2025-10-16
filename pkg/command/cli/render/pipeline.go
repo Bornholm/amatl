@@ -12,6 +12,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/html/layout"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -149,7 +150,7 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 
 			reader := text.NewReader(data)
 
-			sourceDir, err := pipeline.SourceDir(opts.SourceURL)
+			sourceDir, err := urlx.Dir(opts.SourceURL)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -239,7 +240,7 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			reader := text.NewReader(data)
 
-			sourceDir, err := pipeline.SourceDir(opts.SourceURL)
+			sourceDir, err := urlx.Dir(opts.SourceURL)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -277,7 +278,7 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 				return errors.WithStack(err)
 			}
 
-			workDir, err := pipeline.SourceDir(layoutURL)
+			workDir, err := urlx.Dir(layoutURL)
 			if err != nil {
 				return errors.WithStack(err)
 			}

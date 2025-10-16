@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
+	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +24,11 @@ func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, erro
 	workDir := resolver.ContextWorkDir(ctx)
 
 	if workDir != nil && !filepath.IsAbs(path) {
-		absURL := workDir.JoinPath(path)
+		absURL, err := urlx.Join(workDir, path)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+
 		if absURL.Scheme != Scheme && absURL.Scheme != SchemeAlt {
 			reader, err := resolver.ContextResolver(ctx).Resolve(ctx, absURL)
 			if err != nil {
