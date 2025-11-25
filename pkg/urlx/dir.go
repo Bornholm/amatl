@@ -3,6 +3,7 @@ package urlx
 import (
 	"net/url"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -17,7 +18,19 @@ func Dir(file *url.URL) (*url.URL, error) {
 		isOpaque = true
 	}
 
-	dir.Path = filepath.Dir(sourcePath)
+	// Fix Windows path handling: convert backslashes to forward slashes
+	// before calling filepath.Dir to ensure proper directory extraction
+	if isOpaque && strings.Contains(sourcePath, "\\") {
+		// This is likely a Windows path in opaque format
+		// Convert backslashes to forward slashes for proper directory calculation
+		normalizedPath := strings.ReplaceAll(sourcePath, "\\", "/")
+		dir.Path = filepath.Dir(normalizedPath)
+		// Convert back to backslashes for Windows compatibility
+		dir.Path = strings.ReplaceAll(dir.Path, "/", "\\")
+	} else {
+		dir.Path = filepath.Dir(sourcePath)
+	}
+
 	if isOpaque {
 		dir.Opaque = dir.Path
 	}

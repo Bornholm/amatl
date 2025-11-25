@@ -87,11 +87,3 @@ func (t *Transformer) toDataURL(ctx context.Context, destination string) (*datau
 }
 
 var _ parser.ASTTransformer = &Transformer{}
-
-func isURL(rawURL string) bool {
-	if _, err := url.ParseRequestURI(rawURL); err != nil {
-		return false
-	}
-
-	return true
-}
