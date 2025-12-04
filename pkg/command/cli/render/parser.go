@@ -109,7 +109,7 @@ func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 }
 
 func isDirectiveIgnored(dt directive.Type, ignored []directive.Type) bool {
-	return slices.ContainsFunc(ignored, func(dt directive.Type) bool {
-		return toc.Type == dt
+	return slices.ContainsFunc(ignored, func(curr directive.Type) bool {
+		return dt == curr
 	})
 }

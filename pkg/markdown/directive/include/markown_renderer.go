@@ -22,20 +22,20 @@ func (mr *MarkdownRenderer) Render(r *markdown.Render, directive *directive.Node
 
 	includedSource, includedNode, exists := mr.Cache.Get(rawURL)
 	if !exists {
-		panic(errors.Errorf("could not find source associated with url '%s'", rawURL))
+		return ast.WalkStop, errors.Errorf("could not find source associated with url '%s'", rawURL)
 	}
 
 	var buff bytes.Buffer
 
 	if err := r.Renderer().Render(&buff, includedSource, includedNode); err != nil {
-		panic(errors.Wrap(err, "could not convert included source"))
+		return ast.WalkStop, errors.Wrap(err, "could not convert included source")
 	}
 
 	_, _ = r.Writer().Write(markdown.NewLineChar)
 	_, _ = r.Writer().Write(markdown.NewLineChar)
 
 	if _, err := r.Writer().Write(buff.Bytes()); err != nil {
-		panic(errors.WithStack(err))
+		return ast.WalkStop, errors.WithStack(err)
 	}
 
 	return ast.WalkContinue, nil
