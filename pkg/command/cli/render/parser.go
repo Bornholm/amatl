@@ -2,6 +2,7 @@ package render
 
 import (
 	"net/url"
+	"slices"
 
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
@@ -24,6 +25,7 @@ var (
 type ParserOptions struct {
 	EmbedLinkedResources bool
 	LinkReplacements     map[string]string
+	IgnoredDirectives    []directive.Type
 }
 
 func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
@@ -41,6 +43,39 @@ func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 
 	parse := markdown.Parser()
 
+	directiveTransformers := []directive.TransformerOptionFunc{}
+
+	if !isDirectiveIgnored(toc.Type, opts.IgnoredDirectives) {
+		directiveTransformers = append(directiveTransformers,
+			directive.WithTransformer(
+				toc.Type,
+				&toc.NodeTransformer{},
+			),
+		)
+	}
+
+	if !isDirectiveIgnored(attrs.Type, opts.IgnoredDirectives) {
+		directiveTransformers = append(directiveTransformers,
+			directive.WithTransformer(
+				attrs.Type,
+				&attrs.NodeTransformer{},
+			),
+		)
+	}
+
+	if !isDirectiveIgnored(include.Type, opts.IgnoredDirectives) {
+		directiveTransformers = append(directiveTransformers,
+			directive.WithTransformer(
+				include.Type,
+				&include.NodeTransformer{
+					SourceURL: SourceURL,
+					Cache:     cache,
+					Parser:    parse,
+				},
+			),
+		)
+	}
+
 	parse.AddOptions(
 		parser.WithAutoHeadingID(),
 		parser.WithInlineParsers(
@@ -48,24 +83,7 @@ func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 		),
 		parser.WithASTTransformers(
 			util.Prioritized(
-				directive.NewTransformer(
-					directive.WithTransformer(
-						include.Type,
-						&include.NodeTransformer{
-							SourceURL: SourceURL,
-							Cache:     cache,
-							Parser:    parse,
-						},
-					),
-					directive.WithTransformer(
-						toc.Type,
-						&toc.NodeTransformer{},
-					),
-					directive.WithTransformer(
-						attrs.Type,
-						&attrs.NodeTransformer{},
-					),
-				),
+				directive.NewTransformer(directiveTransformers...),
 				0,
 			),
 		),
@@ -88,4 +106,10 @@ func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 	}
 
 	return parse
+}
+
+func isDirectiveIgnored(dt directive.Type, ignored []directive.Type) bool {
+	return slices.ContainsFunc(ignored, func(dt directive.Type) bool {
+		return toc.Type == dt
+	})
 }

@@ -79,7 +79,7 @@ func (t *NodeTransformer) PostTransform(doc *ast.Document, reader text.Reader, p
 			return ast.WalkStop, errors.WithStack(err)
 		}
 
-		toc.SetAttribute([]byte("class"), "toc")
+		toc.SetAttribute([]byte("class"), "amatl-toc")
 
 		parent := n.Parent()
 		parent.ReplaceChild(parent, n, toc)

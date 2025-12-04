@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link
       rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css"
+      href={{ resolve .Context "https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css" }}
     />
     <style>
       .markdown-body {
@@ -43,17 +43,21 @@
         size: portrait;
       }
 
+      h1,
+      ul.amatl-toc {
+        page-break-after: always;
+      }
+
+      img {
+        page-break-inside: avoid;
+      }
+
       @media print {
         .markdown-body > h1:first-of-type {
           margin-top: calc(0.3 * 100vh) !important;
           border-bottom: none;
           text-align: center;
           page-break-after: always;
-        }
-
-        h1,
-        h2 {
-          page-break-before: always;
         }
 
         h1:first-of-type {

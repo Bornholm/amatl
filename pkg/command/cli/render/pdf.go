@@ -5,6 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/Bornholm/amatl/pkg/log"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/attrs"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -54,6 +56,7 @@ func PDF() *cli.Command {
 				MarkdownMiddleware(
 					WithSourceURL(sourceURL),
 					WithLinkReplacements(linkReplacements),
+					WithIgnoredDirectives(toc.Type, attrs.Type),
 				),
 				TemplateMiddleware(
 					WithVars(vars),

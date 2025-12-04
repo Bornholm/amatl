@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Bornholm/amatl/pkg/html/layout"
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/urlx"
@@ -112,8 +113,9 @@ func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middlew
 }
 
 type MarkdownTransformerOptions struct {
-	SourceURL        *url.URL
-	LinkReplacements map[string]string
+	SourceURL         *url.URL
+	LinkReplacements  map[string]string
+	IgnoredDirectives []directive.Type
 }
 
 type MarkdownTransformerOptionFunc func(opts *MarkdownTransformerOptions)
@@ -140,6 +142,12 @@ func WithLinkReplacements(replacements map[string]string) MarkdownTransformerOpt
 	}
 }
 
+func WithIgnoredDirectives(directiveTypes ...directive.Type) MarkdownTransformerOptionFunc {
+	return func(opts *MarkdownTransformerOptions) {
+		opts.IgnoredDirectives = directiveTypes
+	}
+}
+
 func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middleware {
 	opts := NewMarkdownTransformerOptions(funcs...)
 	return func(next pipeline.Transformer) pipeline.Transformer {
@@ -160,6 +168,7 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 			parse := newParser(opts.SourceURL, ParserOptions{
 				EmbedLinkedResources: false,
 				LinkReplacements:     opts.LinkReplacements,
+				IgnoredDirectives:    opts.IgnoredDirectives,
 			})
 			render := newMarkdownRenderer()
 
