@@ -35,6 +35,12 @@ amatl render html my-doc.md
 
 See [`./doc`](./doc/README.md) for more informations.
 
+## Sponsors
+
+<a title="Cadoles" href="https://www.cadoles.com">
+  <img alt="Logo Cadoles" src="https://www.cadoles.com/images/logo-long.svg" width="200" />
+</a>
+
 ## Licence
 
 [MIT](./LICENCE)
