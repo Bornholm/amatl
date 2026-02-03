@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -54,19 +53,16 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 }
 
 func (t *Transformer) toDataURL(ctx context.Context, destination string) (*dataurl.DataURL, error) {
-	resourceURL, err := url.Parse(destination)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	resourcePath := resolver.Path(destination)
 
-	resourceReader, err := resolver.Resolve(ctx, resourceURL)
+	resourceReader, err := resolver.Resolve(ctx, destination)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not resolve resource '%s'", destination)
 	}
 
 	defer func() {
 		if err := resourceReader.Close(); err != nil {
-			panic(errors.Wrapf(err, "could not close resource '%s'", resourceURL))
+			panic(errors.Wrapf(err, "could not close resource '%s'", destination))
 		}
 	}()
 
@@ -77,7 +73,7 @@ func (t *Transformer) toDataURL(ctx context.Context, destination string) (*datau
 
 	mimeType := http.DetectContentType(data)
 
-	if strings.HasSuffix(resourceURL.Path, ".svg") {
+	if strings.HasSuffix(resourcePath.URLPath(), ".svg") {
 		mimeType = "image/svg+xml"
 	}
 

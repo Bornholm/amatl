@@ -13,7 +13,6 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -158,10 +157,8 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 
 			reader := text.NewReader(data)
 
-			sourceDir, err := urlx.Dir(opts.SourceURL)
-			if err != nil {
-				return errors.WithStack(err)
-			}
+			sourcePath := resolver.Path(opts.SourceURL.String())
+			sourceDir := sourcePath.Dir()
 
 			ctx = resolver.WithWorkDir(ctx, sourceDir)
 
@@ -249,10 +246,8 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			reader := text.NewReader(data)
 
-			sourceDir, err := urlx.Dir(opts.SourceURL)
-			if err != nil {
-				return errors.WithStack(err)
-			}
+			sourcePath := resolver.Path(opts.SourceURL.String())
+			sourceDir := sourcePath.Dir()
 
 			ctx = resolver.WithWorkDir(ctx, sourceDir)
 
@@ -282,21 +277,9 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			var doc bytes.Buffer
 
-			layoutURL, err := url.Parse(opts.LayoutURL)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			workDir, err := urlx.Dir(layoutURL)
-			if err != nil {
-				return errors.WithStack(err)
-			}
-
-			ctx = resolver.WithWorkDir(ctx, workDir)
-
 			slog.DebugContext(ctx, "rendering html layout", slog.String("layout", opts.LayoutURL))
 
-			err = layout.Render(
+			err := layout.Render(
 				ctx, &doc, body.Bytes(),
 				layout.WithURL(opts.LayoutURL),
 				layout.WithVars(opts.LayoutVars),

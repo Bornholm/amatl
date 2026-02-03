@@ -4,12 +4,10 @@ import (
 	"context"
 	"html/template"
 	"io"
-	"net/url"
 
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 )
 
@@ -23,12 +21,18 @@ type layoutData struct {
 func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) error {
 	opts := NewLayoutOptions(funcs...)
 
-	url, err := url.Parse(opts.RawURL)
-	if err != nil {
-		return errors.WithStack(err)
+	layoutPath := resolver.Path(opts.RawURL)
+
+	// Create a clean context without any working directory for layout resolution
+	cleanCtx := context.Background()
+	if deadline, ok := ctx.Deadline(); ok {
+		var cancel context.CancelFunc
+		cleanCtx, cancel = context.WithDeadline(cleanCtx, deadline)
+		defer cancel()
 	}
 
-	reader, err := opts.Resolver.Resolve(ctx, url)
+	// Resolve the layout file with clean context (no working directory interference)
+	reader, err := opts.Resolver.Resolve(cleanCtx, layoutPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -46,17 +50,14 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 		return errors.WithStack(err)
 	}
 
+	// Now set the working directory for template functions that might resolve relative resources
+	workDir := layoutPath.Dir()
+	ctx = resolver.WithWorkDir(ctx, workDir)
+
 	layout, err := template.New("").Funcs(opts.Funcs).Parse(string(rawTmpl))
 	if err != nil {
 		return errors.WithStack(err)
 	}
-
-	workDir, err := urlx.Join(url, "../")
-	if err != nil {
-		return errors.WithStack(err)
-	}
-
-	ctx = resolver.WithWorkDir(ctx, workDir)
 
 	data := &layoutData{
 		Vars:    opts.Vars,

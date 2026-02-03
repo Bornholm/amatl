@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -264,14 +263,11 @@ func htmlSplit(rawHTML template.HTML, query string) ([]template.HTML, error) {
 	return elements, nil
 }
 
-func getResolveFunc(resolver resolver.Resolver) func(ctx context.Context, rawURL string, mimeTypes ...string) (template.URL, error) {
+func getResolveFunc(res resolver.Resolver) func(ctx context.Context, rawURL string, mimeTypes ...string) (template.URL, error) {
 	return func(ctx context.Context, rawURL string, mimeTypes ...string) (template.URL, error) {
-		url, err := url.Parse(rawURL)
-		if err != nil {
-			return "", errors.WithStack(err)
-		}
+		path := resolver.Path(rawURL)
 
-		reader, err := resolver.Resolve(ctx, url)
+		reader, err := res.Resolve(ctx, path)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}

@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"io"
-	"net/url"
 
 	"github.com/pkg/errors"
 )
@@ -18,8 +17,8 @@ func SetDefault(scheme string) {
 	DefaultResolver.SetDefault(scheme)
 }
 
-func Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
-	reader, err := DefaultResolver.Resolve(ctx, url)
+func Resolve(ctx context.Context, path string) (io.ReadCloser, error) {
+	reader, err := DefaultResolver.Resolve(ctx, Path(path))
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

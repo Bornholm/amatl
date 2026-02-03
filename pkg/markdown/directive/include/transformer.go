@@ -10,7 +10,6 @@ import (
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -51,7 +50,9 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		return errors.WithStack(err)
 	}
 
-	resourceReader, err := resolver.Resolve(ctx, resourceURL)
+	resourcePath := resolver.Path(resourceURL.String())
+
+	resourceReader, err := resolver.Resolve(ctx, resourcePath.String())
 	if err != nil {
 		return errors.Wrapf(err, "could not resolve resource '%s'", resourceURL)
 	}
@@ -73,10 +74,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedReader := text.NewReader(includedSource)
 
-	sourceDir, err := urlx.Dir(resourceURL)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	sourceDir := resourcePath.Dir()
 
 	includeCtx := resolver.WithWorkDir(ctx, sourceDir)
 	includePC := pipeline.WithContext(includeCtx, parser.NewContext())
@@ -165,12 +163,10 @@ func (t *NodeTransformer) shiftHeadings(root ast.Node, shift int) error {
 }
 
 func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) error {
-	dirURL, err := urlx.Dir(baseURL)
-	if err != nil {
-		return errors.WithStack(err)
-	}
+	basePath := resolver.Path(baseURL.String())
+	dirPath := basePath.Dir()
 
-	err = ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
+	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
@@ -184,12 +180,7 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) 
 			}
 
 			if !filepath.IsAbs(destination) {
-				destinationURL, err := urlx.Join(dirURL, destination)
-				if err != nil {
-					return ast.WalkStop, errors.WithStack(err)
-				}
-
-				destination = destinationURL.String()
+				destination = dirPath.JoinPath(destination).String()
 			}
 
 			n.Destination = []byte(destination)
@@ -201,12 +192,7 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) 
 			}
 
 			if !filepath.IsAbs(destination) {
-				newDestination, err := urlx.Join(dirURL, destination)
-				if err != nil {
-					return ast.WalkStop, errors.WithStack(err)
-				}
-
-				destination = newDestination.String()
+				destination = dirPath.JoinPath(destination).String()
 			}
 
 			n.Destination = []byte(destination)
@@ -294,24 +280,19 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 		return "", nil, errors.WithStack(err)
 	}
 
-	baseDir, err := urlx.Dir(baseURL)
-	if err != nil {
-		return "", nil, errors.WithStack(err)
-	}
+	basePath := resolver.Path(baseURL.String())
+	baseDir := basePath.Dir()
 
 	var resourceURL *url.URL
 
 	switch {
 	case !isURL(rawURL) && !filepath.IsAbs(rawURL):
-		absPath, err := filepath.Abs(baseDir.Path)
+		// Join relative path with base directory
+		fullPath := baseDir.JoinPath(rawURL)
+		resourceURL, err = fullPath.URL()
 		if err != nil {
-			return "", nil, errors.WithStack(err)
-		}
-
-		baseDir.Path = absPath
-		resourceURL, err = urlx.Join(baseDir, rawURL)
-		if err != nil {
-			return "", nil, errors.WithStack(err)
+			// If it's not a valid URL, treat as file path
+			resourceURL = &url.URL{Path: fullPath.String()}
 		}
 
 	default:

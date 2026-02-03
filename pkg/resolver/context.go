@@ -3,7 +3,6 @@ package resolver
 import (
 	"context"
 	"log/slog"
-	"net/url"
 )
 
 type contextKey string
@@ -13,15 +12,15 @@ const (
 	contextKeyResolver contextKey = "resolver"
 )
 
-func WithWorkDir(ctx context.Context, url *url.URL) context.Context {
-	slog.DebugContext(ctx, "using work dir", slog.String("workdir", url.String()))
-	return context.WithValue(ctx, contextKeyWorkDir, url)
+func WithWorkDir(ctx context.Context, path Path) context.Context {
+	slog.DebugContext(ctx, "using work dir", slog.String("workdir", path.String()))
+	return context.WithValue(ctx, contextKeyWorkDir, path)
 }
 
-func ContextWorkDir(ctx context.Context) *url.URL {
-	workDir, ok := ctx.Value(contextKeyWorkDir).(*url.URL)
+func ContextWorkDir(ctx context.Context) Path {
+	workDir, ok := ctx.Value(contextKeyWorkDir).(Path)
 	if !ok {
-		return nil
+		return ""
 	}
 
 	return workDir

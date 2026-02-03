@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -16,23 +15,29 @@ type Resolver struct {
 }
 
 // Resolve implements layout.Resolver.
-func (*Resolver) Resolve(ctx context.Context, u *url.URL) (io.ReadCloser, error) {
+func (*Resolver) Resolve(ctx context.Context, path resolver.Path) (io.ReadCloser, error) {
+	scheme := path.Scheme()
+
+	// Only handle HTTP/HTTPS schemes
+	if scheme != "http" && scheme != "https" {
+		return nil, errors.Errorf("http resolver can only handle http/https schemes, got: %s", scheme)
+	}
+
 	username := os.Getenv("AMATL_HTTP_BASIC_AUTH_USERNAME")
 	password := os.Getenv("AMATL_HTTP_BASIC_AUTH_PASSWORD")
 
+	// Use Path's WithAuth method to handle authentication
+	requestPath := path
 	if username != "" || password != "" {
-		u = cloneURL(*u)
-		u.User = url.UserPassword(username, password)
+		requestPath = path.WithAuth(username, password)
 	}
 
 	var buff bytes.Buffer
 
-	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), &buff)
+	req, err := http.NewRequestWithContext(ctx, "GET", requestPath.String(), &buff)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-
-	req.URL = u
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -51,7 +56,3 @@ func NewResolver() *Resolver {
 }
 
 var _ resolver.Resolver = &Resolver{}
-
-func cloneURL(u url.URL) *url.URL {
-	return &u
-}

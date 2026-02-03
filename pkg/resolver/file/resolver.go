@@ -3,13 +3,10 @@ package file
 import (
 	"context"
 	"io"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 )
 
@@ -17,48 +14,36 @@ type Resolver struct {
 }
 
 // Resolve implements layout.Resolver.
-func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
-	path := toFilePath(url)
+func (*Resolver) Resolve(ctx context.Context, path resolver.Path) (io.ReadCloser, error) {
+	// Get the actual file path, handling file:// URLs
+	filePath := path.String()
+	scheme := path.Scheme()
 
-	// Handle relative "urls"
-	workDir := resolver.ContextWorkDir(ctx)
-
-	if workDir != nil && !filepath.IsAbs(path) {
-		absURL, err := urlx.Join(workDir, path)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-
-		if absURL.Scheme != Scheme && absURL.Scheme != SchemeAlt {
-			reader, err := resolver.ContextResolver(ctx).Resolve(ctx, absURL)
-			if err != nil {
-				return nil, errors.WithStack(err)
+	if scheme == "file" {
+		// For file:// URLs, we need to handle both absolute and relative paths
+		if u, err := path.URL(); err == nil {
+			if u.Host != "" && u.Host != "localhost" {
+				// Handle file://host/path format (relative paths like file://testdata/test.txt)
+				filePath = u.Host + u.Path
+			} else {
+				// Handle file:///path format (absolute paths)
+				filePath = u.Path
+				// On Windows, convert /C:/path to C:/path, then let filepath handle separators
+				if len(filePath) > 3 && filePath[0] == '/' && len(filePath) > 2 && filePath[2] == ':' {
+					filePath = filePath[1:] // Remove leading slash: /C:/path -> C:/path
+				}
+				// Convert forward slashes to backslashes on Windows
+				filePath = filepath.FromSlash(filePath)
 			}
-
-			return reader, nil
 		}
-
-		path = toFilePath(absURL)
 	}
 
-	file, err := os.Open(path)
+	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
 	return file, nil
-}
-
-func toFilePath(u *url.URL) string {
-	var path string
-
-	if u.Opaque != "" {
-		path = u.Scheme + `:` + strings.ReplaceAll(u.Opaque, `\\`, `\`) // Windows path
-	} else {
-		path = u.Host + u.Path
-	}
-
-	return path
 }
 
 func NewResolver() *Resolver {

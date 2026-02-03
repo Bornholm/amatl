@@ -16,7 +16,6 @@ import (
 	"github.com/Bornholm/amatl/pkg/html/layout/resolver/amatl"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
@@ -158,12 +157,9 @@ func getVars(ctx *cli.Context, param string) (map[string]any, error) {
 		return map[string]any{}, nil
 	}
 
-	url, err := url.Parse(rawUrl)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	path := resolver.Path(rawUrl)
 
-	reader, err := resolver.Resolve(ctx.Context, url)
+	reader, err := resolver.Resolve(ctx.Context, path.String())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -278,7 +274,9 @@ func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {
 		return nil, nil, errors.WithStack(err)
 	}
 
-	reader, err := resolver.Resolve(ctx.Context, url)
+	path := resolver.Path(filename)
+
+	reader, err := resolver.Resolve(ctx.Context, path.String())
 	if err != nil {
 		return nil, nil, errors.WithStack(err)
 	}
@@ -348,7 +346,9 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 		return nil, errors.Wrapf(err, "could not parse url '%s'", urlStr)
 	}
 
-	reader, err := resolver.Resolve(ctx, url)
+	path := resolver.Path(urlStr)
+
+	reader, err := resolver.Resolve(ctx, path.String())
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -393,10 +393,8 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 }
 
 func rewriteRelativeURL(fromURL *url.URL, values map[any]any) (map[any]any, error) {
-	sourceDir, err := urlx.Dir(fromURL)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
+	sourcePath := resolver.Path(fromURL.String())
+	sourceDir := sourcePath.Dir()
 
 	for key, rawValue := range values {
 		value, ok := rawValue.(string)
@@ -413,11 +411,7 @@ func rewriteRelativeURL(fromURL *url.URL, values map[any]any) (map[any]any, erro
 				continue
 			}
 
-			abs, err := urlx.Join(sourceDir, value)
-			if err != nil {
-				return nil, errors.WithStack(err)
-			}
-
+			abs := sourceDir.JoinPath(value)
 			values[key] = abs.String()
 			continue
 		}

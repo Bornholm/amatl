@@ -8,7 +8,6 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
-	"github.com/Bornholm/amatl/pkg/urlx"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
@@ -42,12 +41,7 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 			}
 
 			if !filepath.IsAbs(destination) {
-				destinationURL, err := urlx.Join(workdir, destination)
-				if err != nil {
-					return ast.WalkStop, errors.WithStack(err)
-				}
-
-				destination = destinationURL.String()
+				destination = workdir.JoinPath(destination).String()
 			}
 
 			for prefix, replacement := range t.replacements {

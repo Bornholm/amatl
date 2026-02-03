@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/url"
 	"path/filepath"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -41,8 +40,8 @@ type Resolver struct {
 }
 
 // Resolve implements layout.Resolver.
-func (*Resolver) Resolve(ctx context.Context, url *url.URL) (io.ReadCloser, error) {
-	filename := url.Host
+func (*Resolver) Resolve(ctx context.Context, path resolver.Path) (io.ReadCloser, error) {
+	filename := path.Host()
 
 	file, err := templateFs.Open("templates/" + filename)
 	if err != nil {
