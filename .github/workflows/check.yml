@@ -61,5 +61,12 @@ jobs:
       - name: Build website
         run: make website
 
+      - uses: browser-actions/setup-chrome@v2
+        with:
+          install-dependencies: true
+
+      - name: Disable AppArmor
+        run: echo 0 | sudo tee /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+
       - name: Build examples
         run: make examples
