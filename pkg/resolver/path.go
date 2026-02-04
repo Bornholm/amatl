@@ -139,6 +139,38 @@ func (p Path) Dir() Path {
 	return Path(filepath.Dir(string(p)))
 }
 
+func (p Path) Base() Path {
+	if p.IsURL() {
+		u, err := p.URL()
+		if err != nil {
+			// Fallback to filepath if URL parsing fails
+			return Path(filepath.Base(string(p)))
+		}
+
+		// Clone the URL
+		baseURL := *u
+
+		// For URLs, always use forward slashes in the path
+		urlPath := strings.ReplaceAll(u.Path, "\\", "/")
+		baseURL.Path = filepath.ToSlash(filepath.Base(urlPath))
+
+		// Handle opaque URLs (like Windows paths)
+		if u.Opaque != "" {
+			if strings.Contains(u.Opaque, "\\") {
+				baseURL.Opaque = filepath.Dir(u.Opaque)
+				baseURL.Path = strings.ReplaceAll(baseURL.Opaque, "\\", "/")
+			} else {
+				baseURL.Path = filepath.ToSlash(filepath.Base(u.Opaque))
+				baseURL.Opaque = baseURL.Path
+			}
+		}
+
+		return Path(baseURL.String())
+	}
+
+	return Path(filepath.Base(string(p)))
+}
+
 // JoinPath joins the current path with additional path segments
 func (p Path) JoinPath(paths ...string) Path {
 	if p.IsURL() {

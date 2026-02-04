@@ -23,16 +23,8 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 
 	layoutPath := resolver.Path(opts.RawURL)
 
-	// Create a clean context without any working directory for layout resolution
-	cleanCtx := context.Background()
-	if deadline, ok := ctx.Deadline(); ok {
-		var cancel context.CancelFunc
-		cleanCtx, cancel = context.WithDeadline(cleanCtx, deadline)
-		defer cancel()
-	}
-
 	// Resolve the layout file with clean context (no working directory interference)
-	reader, err := opts.Resolver.Resolve(cleanCtx, layoutPath)
+	reader, err := opts.Resolver.Resolve(ctx, layoutPath)
 	if err != nil {
 		return errors.WithStack(err)
 	}

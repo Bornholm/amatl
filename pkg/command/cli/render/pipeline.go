@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
-	"net/url"
 	"sync"
 	"text/template"
 	"time"
@@ -112,7 +111,7 @@ func TemplateMiddleware(funcs ...TemplateTransformerOptionFunc) pipeline.Middlew
 }
 
 type MarkdownTransformerOptions struct {
-	SourceURL         *url.URL
+	SourcePath        resolver.Path
 	LinkReplacements  map[string]string
 	IgnoredDirectives []directive.Type
 }
@@ -129,9 +128,9 @@ func NewMarkdownTransformerOptions(funcs ...MarkdownTransformerOptionFunc) *Mark
 	return opts
 }
 
-func WithSourceURL(sourceURL *url.URL) MarkdownTransformerOptionFunc {
+func WithSourcePath(sourcePath resolver.Path) MarkdownTransformerOptionFunc {
 	return func(opts *MarkdownTransformerOptions) {
-		opts.SourceURL = sourceURL
+		opts.SourcePath = sourcePath
 	}
 }
 
@@ -157,12 +156,11 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 
 			reader := text.NewReader(data)
 
-			sourcePath := resolver.Path(opts.SourceURL.String())
-			sourceDir := sourcePath.Dir()
+			// sourcePath := resolver.Path(opts.SourceURL.String())
+			// sourceDir := sourcePath.Dir()
+			// ctx = resolver.WithWorkDir(ctx, sourceDir)
 
-			ctx = resolver.WithWorkDir(ctx, sourceDir)
-
-			parse := newParser(opts.SourceURL, ParserOptions{
+			parse := newParser(opts.SourcePath, ParserOptions{
 				EmbedLinkedResources: false,
 				LinkReplacements:     opts.LinkReplacements,
 				IgnoredDirectives:    opts.IgnoredDirectives,
@@ -246,12 +244,11 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			reader := text.NewReader(data)
 
-			sourcePath := resolver.Path(opts.SourceURL.String())
-			sourceDir := sourcePath.Dir()
+			// sourcePath := resolver.Path(opts.SourceURL.String())
+			// sourceDir := sourcePath.Dir()
+			// ctx = resolver.WithWorkDir(ctx, sourceDir)
 
-			ctx = resolver.WithWorkDir(ctx, sourceDir)
-
-			parse := newParser(opts.SourceURL, ParserOptions{
+			parse := newParser(opts.SourcePath, ParserOptions{
 				EmbedLinkedResources: true,
 				LinkReplacements:     opts.LinkReplacements,
 			})

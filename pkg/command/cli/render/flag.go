@@ -263,22 +263,17 @@ func getLinkReplacements(ctx *cli.Context) (map[string]string, error) {
 	return linkReplacements, nil
 }
 
-func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {
+func getMarkdownSource(ctx *cli.Context) (resolver.Path, []byte, error) {
 	filename := ctx.Args().First()
 	if filename == "" {
-		return nil, nil, errors.New("you must provide the path or url to a markdown file")
-	}
-
-	url, err := url.Parse(filename)
-	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return "", nil, errors.New("you must provide the path or url to a markdown file")
 	}
 
 	path := resolver.Path(filename)
 
 	reader, err := resolver.Resolve(ctx.Context, path.String())
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return "", nil, errors.WithStack(err)
 	}
 
 	defer func() {
@@ -291,10 +286,10 @@ func getMarkdownSource(ctx *cli.Context) (*url.URL, []byte, error) {
 
 	source, err := io.ReadAll(transformed)
 	if err != nil {
-		return nil, nil, errors.WithStack(err)
+		return "", nil, errors.WithStack(err)
 	}
 
-	return url, source, nil
+	return path, source, nil
 }
 
 func getPDFScale(ctx *cli.Context) float64 {

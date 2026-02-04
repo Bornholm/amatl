@@ -1,7 +1,6 @@
 package render
 
 import (
-	"net/url"
 	"slices"
 
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
@@ -10,6 +9,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/Bornholm/amatl/pkg/markdown/linkrewriter"
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
@@ -28,7 +28,7 @@ type ParserOptions struct {
 	IgnoredDirectives    []directive.Type
 }
 
-func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
+func newParser(sourcePath resolver.Path, opts ParserOptions) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
@@ -68,9 +68,9 @@ func newParser(SourceURL *url.URL, opts ParserOptions) parser.Parser {
 			directive.WithTransformer(
 				include.Type,
 				&include.NodeTransformer{
-					SourceURL: SourceURL,
-					Cache:     cache,
-					Parser:    parse,
+					SourcePath: sourcePath,
+					Cache:      cache,
+					Parser:     parse,
 				},
 			),
 		)

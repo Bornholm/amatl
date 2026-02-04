@@ -8,6 +8,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive/attrs"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/Bornholm/amatl/pkg/pipeline"
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
@@ -20,7 +21,7 @@ func PDF() *cli.Command {
 		Flags:  flags,
 		Before: altsrc.InitInputSourceWithContext(flags, NewResolverSourceFromFlagFunc("config")),
 		Action: func(ctx *cli.Context) error {
-			sourceURL, source, err := getMarkdownSource(ctx)
+			sourcePath, source, err := getMarkdownSource(ctx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -50,11 +51,18 @@ func PDF() *cli.Command {
 			displayHeaderFooter, headerTemplate, footerTemplate := getPDFHeaderFooter(ctx)
 			noSandbox := getPDFNoSandbox(ctx)
 
+			baseDir := sourcePath.Dir()
+			sourcePath = sourcePath.Base()
+
+			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourcePath.String()))
+
+			pipelineCtx = resolver.WithWorkDir(pipelineCtx, baseDir)
+
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
 				MarkdownMiddleware(
-					WithSourceURL(sourceURL),
+					WithSourcePath(sourcePath),
 					WithLinkReplacements(linkReplacements),
 					WithIgnoredDirectives(toc.Type, attrs.Type),
 				),
@@ -66,7 +74,7 @@ func PDF() *cli.Command {
 				// as HTML
 				HTMLMiddleware(
 					WithMarkdownTransformerOptions(
-						WithSourceURL(sourceURL),
+						WithSourcePath(sourcePath),
 						WithLinkReplacements(linkReplacements),
 					),
 					WithLayoutURL(getHTMLLayout(ctx)),
@@ -90,8 +98,6 @@ func PDF() *cli.Command {
 			)
 
 			payload := pipeline.NewPayload(source)
-
-			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourceURL.String()))
 
 			if err := transformer.Transform(pipelineCtx, payload); err != nil {
 				return errors.WithStack(err)

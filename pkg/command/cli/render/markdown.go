@@ -2,9 +2,11 @@ package render
 
 import (
 	"io"
+	"log/slog"
 
 	"github.com/Bornholm/amatl/pkg/log"
 	"github.com/Bornholm/amatl/pkg/pipeline"
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
 	"github.com/urfave/cli/v2/altsrc"
@@ -17,7 +19,7 @@ func Markdown() *cli.Command {
 		Flags:  flags,
 		Before: altsrc.InitInputSourceWithContext(flags, NewResolverSourceFromFlagFunc("config")),
 		Action: func(ctx *cli.Context) error {
-			sourceURL, source, err := getMarkdownSource(ctx)
+			sourcePath, source, err := getMarkdownSource(ctx)
 			if err != nil {
 				return errors.WithStack(err)
 			}
@@ -36,7 +38,7 @@ func Markdown() *cli.Command {
 
 			transformer := pipeline.Pipeline(
 				MarkdownMiddleware(
-					WithSourceURL(sourceURL),
+					WithSourcePath(sourcePath),
 					WithLinkReplacements(linkReplacements),
 				),
 				TemplateMiddleware(
@@ -47,7 +49,11 @@ func Markdown() *cli.Command {
 
 			payload := pipeline.NewPayload(source)
 
-			pipelineCtx := log.WithAttrs(ctx.Context)
+			baseDir := sourcePath.Dir()
+			sourcePath = sourcePath.Base()
+
+			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourcePath.String()))
+			pipelineCtx = resolver.WithWorkDir(pipelineCtx, baseDir)
 
 			if err := transformer.Transform(pipelineCtx, payload); err != nil {
 				return errors.WithStack(err)

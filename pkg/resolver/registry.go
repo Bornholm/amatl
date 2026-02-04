@@ -22,6 +22,8 @@ func (r *Registry) Resolve(ctx context.Context, path Path) (io.ReadCloser, error
 	resolvedPath := path
 	if workDir != "" && !path.IsAbs() {
 		resolvedPath = workDir.JoinPath(path.String())
+		slog.DebugContext(ctx, "using workdir", slog.String("original_path", path.String()), slog.String("workdir", workDir.String()), slog.String("joined_path", resolvedPath.String()))
+
 	}
 
 	// Now determine the scheme from the resolved path
@@ -40,19 +42,7 @@ func (r *Registry) Resolve(ctx context.Context, path Path) (io.ReadCloser, error
 
 	slog.DebugContext(ctx, "resolving path", slog.String("path", resolvedPath.String()))
 
-	// Pass the resolved path to the resolver, but clear the working directory context
-	// to prevent double resolution
-	cleanCtx := context.Background()
-	if deadline, ok := ctx.Deadline(); ok {
-		var cancel context.CancelFunc
-		cleanCtx, cancel = context.WithDeadline(cleanCtx, deadline)
-		defer cancel()
-	}
-
-	// Copy other context values except working directory
-	cleanCtx = WithResolver(cleanCtx, r)
-
-	reader, err := resolver.Resolve(cleanCtx, resolvedPath)
+	reader, err := resolver.Resolve(ctx, resolvedPath)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

@@ -17,16 +17,16 @@ import (
 )
 
 type NodeTransformer struct {
-	Cache     *SourceCache
-	Parser    parser.Parser
-	SourceURL *url.URL
+	Cache      *SourceCache
+	Parser     parser.Parser
+	SourcePath resolver.Path
 }
 
 // Transform implements directive.NodeTransformer.
 func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc parser.Context) error {
-	sourceURL := getSourceURL(pc, t.SourceURL)
+	sourcePath := getSourcePath(pc, t.SourcePath)
 
-	rawURL, resourceURL, err := parseNodeURLAttribute(sourceURL, node)
+	rawURL, resourceURL, err := parseNodeURLAttribute(sourcePath, node)
 	if err != nil {
 		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
 	}
@@ -274,13 +274,12 @@ func getNodeFromHeadingsAttribute(node ast.Node) (int, error) {
 	return int(fromHeadings), nil
 }
 
-func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, error) {
+func parseNodeURLAttribute(basePath resolver.Path, node ast.Node) (string, *url.URL, error) {
 	rawURL, err := getNodeURLAttribute(node)
 	if err != nil {
 		return "", nil, errors.WithStack(err)
 	}
 
-	basePath := resolver.Path(baseURL.String())
 	baseDir := basePath.Dir()
 
 	var resourceURL *url.URL
@@ -305,17 +304,17 @@ func parseNodeURLAttribute(baseURL *url.URL, node ast.Node) (string, *url.URL, e
 	return rawURL, resourceURL, nil
 }
 
-var contextKeySourceURL = parser.NewContextKey()
+var contextKeySourcePath = parser.NewContextKey()
 
-func getSourceURL(ctx parser.Context, defaultSourceURL *url.URL) *url.URL {
-	sourceURL, ok := ctx.Get(contextKeySourceURL).(*url.URL)
-	if !ok || sourceURL == nil {
-		return defaultSourceURL
+func getSourcePath(ctx parser.Context, defaultSourcePath resolver.Path) resolver.Path {
+	sourcePath, ok := ctx.Get(contextKeySourcePath).(resolver.Path)
+	if !ok || sourcePath == "" {
+		return defaultSourcePath
 	}
 
-	return sourceURL
+	return sourcePath
 }
 
 func setSourceURL(ctx parser.Context, url *url.URL) {
-	ctx.Set(contextKeySourceURL, url)
+	ctx.Set(contextKeySourcePath, url)
 }
