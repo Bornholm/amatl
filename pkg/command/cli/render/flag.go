@@ -336,11 +336,6 @@ func NewResolverSourceFromFlagFunc(flag string) func(cCtx *cli.Context) (altsrc.
 }
 
 func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSourceContext, error) {
-	url, err := url.Parse(urlStr)
-	if err != nil {
-		return nil, errors.Wrapf(err, "could not parse url '%s'", urlStr)
-	}
-
 	path := resolver.Path(urlStr)
 
 	reader, err := resolver.Resolve(ctx, path.String())
@@ -374,7 +369,7 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 			return nil, errors.WithStack(err)
 		}
 
-		values, err = rewriteRelativeURL(url, values)
+		values, err = rewriteRelativePath(path, values)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
@@ -387,8 +382,7 @@ func NewResolvedInputSource(ctx context.Context, urlStr string) (altsrc.InputSou
 
 }
 
-func rewriteRelativeURL(fromURL *url.URL, values map[any]any) (map[any]any, error) {
-	sourcePath := resolver.Path(fromURL.String())
+func rewriteRelativePath(sourcePath resolver.Path, values map[any]any) (map[any]any, error) {
 	sourceDir := sourcePath.Dir()
 
 	for key, rawValue := range values {

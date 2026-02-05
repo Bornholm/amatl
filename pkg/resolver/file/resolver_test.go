@@ -26,9 +26,11 @@ func TestResolver(t *testing.T) {
 	filepath.Join()
 
 	urls := []string{
-		"./testdata/test.txt",
+		"../file/testdata/test.txt",
 		"file://testdata/test.txt",
-		filepath.Join(workingDirectory, "testdata/test.txt"),
+		filepath.Join(workingDirectory, "testdata", "test.txt"),
+		// Relative windows path
+		"..\\file\\testdata\\test.txt",
 	}
 
 	resolve := func(path string) {

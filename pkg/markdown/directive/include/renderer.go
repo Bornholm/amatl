@@ -23,7 +23,7 @@ func (r *NodeRenderer) Render(writer util.BufWriter, source []byte, node *direct
 
 	includedSource, includedNode, exists := r.Cache.Get(rawURL)
 	if !exists {
-		panic(errors.Errorf("could not find source associated with url '%s'", rawURL))
+		panic(errors.Errorf("could not find source associated with path '%s'", rawURL))
 	}
 
 	var buff bytes.Buffer

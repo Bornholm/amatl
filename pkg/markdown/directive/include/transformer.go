@@ -26,7 +26,7 @@ type NodeTransformer struct {
 func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc parser.Context) error {
 	sourcePath := getSourcePath(pc, t.SourcePath)
 
-	rawURL, resourceURL, err := parseNodeURLAttribute(sourcePath, node)
+	resourcePath, rawURL, err := parseNodeURLAttribute(sourcePath, node)
 	if err != nil {
 		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
 	}
@@ -41,7 +41,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		fromHeadings = 0
 	}
 
-	if _, _, exists := t.Cache.Get(resourceURL.String()); exists {
+	if _, _, exists := t.Cache.Get(resourcePath.String()); exists {
 		return nil
 	}
 
@@ -50,16 +50,14 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		return errors.WithStack(err)
 	}
 
-	resourcePath := resolver.Path(resourceURL.String())
-
 	resourceReader, err := resolver.Resolve(ctx, resourcePath.String())
 	if err != nil {
-		return errors.Wrapf(err, "could not resolve resource '%s'", resourceURL)
+		return errors.Wrapf(err, "could not resolve resource '%s'", resourcePath)
 	}
 
 	defer func() {
 		if err := resourceReader.Close(); err != nil {
-			panic(errors.Wrapf(err, "could not close resource '%s'", resourceURL))
+			panic(errors.Wrapf(err, "could not close resource '%s'", resourcePath))
 		}
 	}()
 
@@ -67,7 +65,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedSource, err := io.ReadAll(transformed)
 	if err != nil {
-		return errors.Wrapf(err, "could not read markdown resource '%s'", resourceURL)
+		return errors.Wrapf(err, "could not read markdown resource '%s'", resourcePath)
 	}
 
 	setIncludedSource(node, includedSource)
@@ -79,23 +77,24 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	includeCtx := resolver.WithWorkDir(ctx, sourceDir)
 	includePC := pipeline.WithContext(includeCtx, parser.NewContext())
 
-	setSourceURL(includePC, resourceURL)
+	setSourcePath(includePC, resourcePath)
 
 	includedNode := t.Parser.Parse(includedReader, parser.WithContext(includePC))
 
 	if err := t.excludeSections(includedNode, fromHeadings); err != nil {
-		return errors.Wrapf(err, "could not exclude sections of included markdown resource '%s'", resourceURL)
+		return errors.Wrapf(err, "could not exclude sections of included markdown resource '%s'", resourcePath)
 	}
 
-	if err := t.rewriteRelativeLinks(includedNode, resourceURL); err != nil {
-		return errors.Wrapf(err, "could not rewrite links of included markdown resource '%s'", resourceURL)
+	if err := t.rewriteRelativeLinks(includedNode, resourcePath); err != nil {
+		return errors.Wrapf(err, "could not rewrite links of included markdown resource '%s'", resourcePath)
 	}
 
 	if err := t.shiftHeadings(includedNode, shiftHeadings); err != nil {
-		return errors.Wrapf(err, "could not shift headings of included markdown resource '%s'", resourceURL)
+		return errors.Wrapf(err, "could not shift headings of included markdown resource '%s'", resourcePath)
 	}
 
 	setIncludedNode(node, includedNode)
+
 	t.Cache.Set(rawURL, includedSource, includedNode)
 
 	parent := node.Parent()
@@ -162,8 +161,7 @@ func (t *NodeTransformer) shiftHeadings(root ast.Node, shift int) error {
 	return nil
 }
 
-func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, baseURL *url.URL) error {
-	basePath := resolver.Path(baseURL.String())
+func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, basePath resolver.Path) error {
 	dirPath := basePath.Dir()
 
 	err := ast.Walk(root, func(node ast.Node, entering bool) (ast.WalkStatus, error) {
@@ -274,34 +272,15 @@ func getNodeFromHeadingsAttribute(node ast.Node) (int, error) {
 	return int(fromHeadings), nil
 }
 
-func parseNodeURLAttribute(basePath resolver.Path, node ast.Node) (string, *url.URL, error) {
+func parseNodeURLAttribute(basePath resolver.Path, node ast.Node) (resolver.Path, string, error) {
 	rawURL, err := getNodeURLAttribute(node)
 	if err != nil {
-		return "", nil, errors.WithStack(err)
+		return "", "", errors.WithStack(err)
 	}
 
 	baseDir := basePath.Dir()
 
-	var resourceURL *url.URL
-
-	switch {
-	case !isURL(rawURL) && !filepath.IsAbs(rawURL):
-		// Join relative path with base directory
-		fullPath := baseDir.JoinPath(rawURL)
-		resourceURL, err = fullPath.URL()
-		if err != nil {
-			// If it's not a valid URL, treat as file path
-			resourceURL = &url.URL{Path: fullPath.String()}
-		}
-
-	default:
-		resourceURL, err = url.Parse(rawURL)
-		if err != nil {
-			return "", nil, errors.Wrapf(err, "could not parse resource url '%s'", rawURL)
-		}
-	}
-
-	return rawURL, resourceURL, nil
+	return baseDir.Join(resolver.Path(rawURL)), rawURL, nil
 }
 
 var contextKeySourcePath = parser.NewContextKey()
@@ -315,6 +294,6 @@ func getSourcePath(ctx parser.Context, defaultSourcePath resolver.Path) resolver
 	return sourcePath
 }
 
-func setSourceURL(ctx parser.Context, url *url.URL) {
-	ctx.Set(contextKeySourcePath, url)
+func setSourcePath(ctx parser.Context, path resolver.Path) {
+	ctx.Set(contextKeySourcePath, path)
 }

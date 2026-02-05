@@ -22,7 +22,7 @@ func (mr *MarkdownRenderer) Render(r *markdown.Render, directive *directive.Node
 
 	includedSource, includedNode, exists := mr.Cache.Get(rawURL)
 	if !exists {
-		return ast.WalkStop, errors.Errorf("could not find source associated with url '%s'", rawURL)
+		return ast.WalkStop, errors.Errorf("could not find source associated with path '%s'", rawURL)
 	}
 
 	var buff bytes.Buffer

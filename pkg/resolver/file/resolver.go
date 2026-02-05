@@ -5,6 +5,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
@@ -36,6 +38,14 @@ func (*Resolver) Resolve(ctx context.Context, path resolver.Path) (io.ReadCloser
 				filePath = filepath.FromSlash(filePath)
 			}
 		}
+	}
+
+	platform := runtime.GOOS
+	switch platform {
+	case "windows":
+		filePath = strings.ReplaceAll(filePath, "/", string(os.PathSeparator))
+	default:
+		filePath = strings.ReplaceAll(filePath, "\\", string(os.PathSeparator))
 	}
 
 	file, err := os.Open(filePath)
