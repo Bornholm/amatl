@@ -191,8 +191,17 @@ func getTemplateDelimiters(ctx *cli.Context) (string, string) {
 	return left, right
 }
 
-func getHTMLLayout(ctx *cli.Context) string {
-	return ctx.String(paramHTMLLayout)
+func getHTMLLayout(ctx *cli.Context) (resolver.Path, error) {
+	htmlLayoutPath := resolver.Path(ctx.String(paramHTMLLayout))
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	absLayoutPath := resolver.Path(cwd).Join(htmlLayoutPath)
+
+	return absLayoutPath, nil
 }
 
 func withCommonFlags(flags ...cli.Flag) []cli.Flag {

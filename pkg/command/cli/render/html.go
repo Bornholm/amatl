@@ -43,6 +43,11 @@ func HTML() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			htmlLayoutPath, err := getHTMLLayout(ctx)
+			if err != nil {
+				return errors.Wrap(err, "could not retrieve html layout")
+			}
+
 			baseDir := sourcePath.Dir()
 			sourcePath = sourcePath.Base()
 
@@ -68,7 +73,7 @@ func HTML() *cli.Command {
 						WithSourcePath(sourcePath),
 						WithLinkReplacements(linkReplacements),
 					),
-					WithLayoutURL(getHTMLLayout(ctx)),
+					WithLayoutURL(htmlLayoutPath.String()),
 					WithLayoutVars(layoutVars),
 				),
 			)

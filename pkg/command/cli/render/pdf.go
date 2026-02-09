@@ -58,6 +58,11 @@ func PDF() *cli.Command {
 
 			pipelineCtx = resolver.WithWorkDir(pipelineCtx, baseDir)
 
+			htmlLayoutPath, err := getHTMLLayout(ctx)
+			if err != nil {
+				return errors.Wrap(err, "could not retrieve html layout")
+			}
+
 			transformer := pipeline.Pipeline(
 				// Preprocess the markdown entrypoint
 				// document to include potential directives
@@ -77,7 +82,7 @@ func PDF() *cli.Command {
 						WithSourcePath(sourcePath),
 						WithLinkReplacements(linkReplacements),
 					),
-					WithLayoutURL(getHTMLLayout(ctx)),
+					WithLayoutURL(htmlLayoutPath.String()),
 					WithLayoutVars(layoutVars),
 				),
 				// Render generated HTML to PDF with Chromium

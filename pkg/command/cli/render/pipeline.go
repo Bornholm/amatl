@@ -153,12 +153,7 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 			slog.DebugContext(ctx, "entering markdown middleware")
 
 			data := payload.GetData()
-
 			reader := text.NewReader(data)
-
-			// sourcePath := resolver.Path(opts.SourceURL.String())
-			// sourceDir := sourcePath.Dir()
-			// ctx = resolver.WithWorkDir(ctx, sourceDir)
 
 			parse := newParser(opts.SourcePath, ParserOptions{
 				EmbedLinkedResources: false,
@@ -243,10 +238,6 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 			data := payload.GetData()
 
 			reader := text.NewReader(data)
-
-			// sourcePath := resolver.Path(opts.SourceURL.String())
-			// sourceDir := sourcePath.Dir()
-			// ctx = resolver.WithWorkDir(ctx, sourceDir)
 
 			parse := newParser(opts.SourcePath, ParserOptions{
 				EmbedLinkedResources: true,

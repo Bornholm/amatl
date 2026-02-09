@@ -86,6 +86,10 @@ func (p Path) URLPath() string {
 func (p Path) Join(paths ...Path) Path {
 	strPaths := make([]string, len(paths))
 	for i, s := range paths {
+		if s.IsAbs() {
+			return s
+		}
+
 		strPaths[i] = s.String()
 	}
 
