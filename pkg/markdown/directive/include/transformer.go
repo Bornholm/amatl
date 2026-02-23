@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -72,7 +73,10 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 
 	includedReader := text.NewReader(includedSource)
 
-	sourceDir := resourcePath.Dir()
+	sourceDir, err := resourcePath.Dir().Abs()
+	if err != nil {
+		return errors.Wrapf(err, "could not retrieve absolute path to resource '%s'", resourcePath)
+	}
 
 	includeCtx := resolver.WithWorkDir(ctx, sourceDir)
 	includePC := pipeline.WithContext(includeCtx, parser.NewContext())
@@ -211,7 +215,7 @@ var _ directive.NodeTransformer = &NodeTransformer{}
 
 func isURL(str string) bool {
 	_, err := url.ParseRequestURI(str)
-	return err == nil
+	return err == nil || strings.HasPrefix(str, "#")
 }
 
 const attrNameUrl = "url"

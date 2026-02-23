@@ -278,7 +278,10 @@ func getMarkdownSource(ctx *cli.Context) (resolver.Path, []byte, error) {
 		return "", nil, errors.New("you must provide the path or url to a markdown file")
 	}
 
-	path := resolver.Path(filename)
+	path, err := resolver.Path(filename).Abs()
+	if err != nil {
+		return "", nil, errors.WithStack(err)
+	}
 
 	reader, err := resolver.Resolve(ctx.Context, path.String())
 	if err != nil {

@@ -51,8 +51,10 @@ func PDF() *cli.Command {
 			displayHeaderFooter, headerTemplate, footerTemplate := getPDFHeaderFooter(ctx)
 			noSandbox := getPDFNoSandbox(ctx)
 
-			baseDir := sourcePath.Dir()
-			sourcePath = sourcePath.Base()
+			baseDir, err := sourcePath.Dir().Abs()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourcePath.String()))
 

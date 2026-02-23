@@ -48,8 +48,10 @@ func HTML() *cli.Command {
 				return errors.Wrap(err, "could not retrieve html layout")
 			}
 
-			baseDir := sourcePath.Dir()
-			sourcePath = sourcePath.Base()
+			baseDir, err := sourcePath.Dir().Abs()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourcePath.String()))
 			pipelineCtx = resolver.WithWorkDir(pipelineCtx, baseDir)

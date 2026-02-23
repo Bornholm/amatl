@@ -110,6 +110,19 @@ func (p Path) IsAbs() bool {
 	return filepath.IsAbs(p.String())
 }
 
+func (p Path) Abs() (Path, error) {
+	if p.IsURL() {
+		return p, nil
+	}
+
+	absPath, err := filepath.Abs(p.String())
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return Path(absPath), nil
+}
+
 // Dir returns the directory part of the path
 func (p Path) Dir() Path {
 	if p.IsURL() {

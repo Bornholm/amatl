@@ -43,7 +43,10 @@ func Render(ctx context.Context, w io.Writer, body []byte, funcs ...OptionFunc) 
 	}
 
 	// Now set the working directory for template functions that might resolve relative resources
-	workDir := layoutPath.Dir()
+	workDir, err := layoutPath.Dir().Abs()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	ctx = resolver.WithWorkDir(ctx, workDir)
 
 	layout, err := template.New("").Funcs(opts.Funcs).Parse(string(rawTmpl))

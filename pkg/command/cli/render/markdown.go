@@ -36,6 +36,11 @@ func Markdown() *cli.Command {
 				return errors.WithStack(err)
 			}
 
+			sourcePath, err = sourcePath.Abs()
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
 			transformer := pipeline.Pipeline(
 				MarkdownMiddleware(
 					WithSourcePath(sourcePath),
@@ -49,8 +54,10 @@ func Markdown() *cli.Command {
 
 			payload := pipeline.NewPayload(source)
 
-			baseDir := sourcePath.Dir()
-			sourcePath = sourcePath.Base()
+			baseDir, err := sourcePath.Dir().Abs()
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			pipelineCtx := log.WithAttrs(ctx.Context, slog.Any("source", sourcePath.String()))
 			pipelineCtx = resolver.WithWorkDir(pipelineCtx, baseDir)
