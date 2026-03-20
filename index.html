@@ -78,6 +78,26 @@
                   
                 </ul>
               
+                <p class="menu-label">MCP Server</p>
+                <ul class="menu-list">
+                  
+                  <li>
+                    <a href=#-starting-the-server>Starting the server</a>
+                    
+                  </li>
+                  
+                  <li>
+                    <a href=#-configuring-your-mcp-client>Configuring your client</a>
+                    
+                  </li>
+                  
+                  <li>
+                    <a href=#-available-tools>Available tools</a>
+                    
+                  </li>
+                  
+                </ul>
+              
                 <p class="menu-label">How to</p>
                 <ul class="menu-list">
                   
@@ -135,7 +155,8 @@
 <li>Use <a href="#directives">custom directives</a> to include others documents or generate tables of content;</li>
 <li>Use <a href="#layouts">pre-defined or custom layouts</a> to transform your content into presentations, report, etc</li>
 <li>Use <a href="#variables-and-templating">Go templating</a> to inject dynamic data into your document;</li>
-<li>Rewrite you relative links and embed external resources.</li>
+<li>Rewrite you relative links and embed external resources;</li>
+<li>Expose your Markdown workspace to AI assistants via the built-in <a href="#mcp-server">MCP server</a>.</li>
 </ul>
 <blockquote>
 <p><strong>Why the name <code>amatl</code> ?</strong></p>
@@ -148,13 +169,13 @@
 <h4 id="-on-linux">🐧 On Linux</h4>
 <ol>
 <li>
-<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.29.4">latest release page</a> or use the following <code>wget</code> command:</p>
-<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>wget https://github.com/Bornholm/amatl/releases/download/v0.29.4/amatl_0.29.4_linux_amd64.tar.gz
+<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.30.0">latest release page</a> or use the following <code>wget</code> command:</p>
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>wget https://github.com/Bornholm/amatl/releases/download/v0.30.0/amatl_0.30.0_linux_amd64.tar.gz
 </span></span></code></pre><p><em>Replace <code>amd64</code> by your architecture.</em></p>
 </li>
 <li>
 <p>Extract the binary then move it to your preferred location, for example <code>/usr/local/bin</code></p>
-<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>tar -xzf amatl_0.29.4_linux_amd64.tar.gz
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>tar -xzf amatl_0.30.0_linux_amd64.tar.gz
 </span></span><span style="display:flex;"><span>sudo mv ./amatl /usr/local/bin
 </span></span></code></pre></li>
 <li>
@@ -181,8 +202,8 @@
 <h4 id="-on-windows">🪟 On Windows</h4>
 <ol>
 <li>
-<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.29.4">latest release page</a> and download the file named:</p>
-<pre><code>amatl_0.29.4_windows_amd64.tar.gz
+<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.30.0">latest release page</a> and download the file named:</p>
+<pre><code>amatl_0.30.0_windows_amd64.tar.gz
 </code></pre>
 <p><em>Replace <code>amd64</code> with your architecture if needed.</em></p>
 </li>
@@ -207,13 +228,13 @@
 <h4 id="-on-macos">🍎 On MacOS</h4>
 <ol>
 <li>
-<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.29.4">latest release page</a> or use <code>curl</code>:</p>
-<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>curl -LO https://github.com/Bornholm/amatl/releases/download/v0.29.4/amatl_0.29.4_darwin_amd64.tar.gz
+<p>Visit the <a href="https://github.com/Bornholm/amatl/releases/tag/v0.30.0">latest release page</a> or use <code>curl</code>:</p>
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>curl -LO https://github.com/Bornholm/amatl/releases/download/v0.30.0/amatl_0.30.0_darwin_amd64.tar.gz
 </span></span></code></pre><p><em>Replace <code>amd64</code> with your CPU architecture (e.g., <code>arm64</code> for Apple Silicon).</em></p>
 </li>
 <li>
 <p>Extract the archive and move the binary:</p>
-<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>tar -xzf amatl_0.29.4_darwin_amd64.tar.gz
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>tar -xzf amatl_0.30.0_darwin_amd64.tar.gz
 </span></span><span style="display:flex;"><span>sudo mv ./amatl /usr/local/bin
 </span></span></code></pre></li>
 <li>
@@ -297,7 +318,7 @@
 </code></pre>
 <p>Please take note of the linefeed before and after the directive. <strong>They are required</strong>.</p>
 <p>Each directive triggers a specific behavior based on its type.</p>
-<h3 id="includeurlurl-fromheadingsheadinglevel-shiftheadingslevelshift"><code>:include{url=&quot;&lt;url&gt;&quot;, fromHeadings=&quot;&lt;headingLevel&gt;&quot;, shiftHeadings=&quot;&lt;levelShift&gt;&quot;}</code></h3>
+<h3 id="includeurlurl-selectselector-fromheadingsheadinglevel-shiftheadingslevelshift"><code>:include{url=&quot;&lt;url&gt;&quot;, select=&quot;&lt;selector&gt;&quot;, fromHeadings=&quot;&lt;headingLevel&gt;&quot;, shiftHeadings=&quot;&lt;levelShift&gt;&quot;}</code></h3>
 <p>Include another Markdown file in your document.</p>
 <h4 id="parameters">Parameters</h4>
 <h5 id="urlurl"><code>url=&quot;&lt;url&gt;&quot;</code></h5>
@@ -305,6 +326,15 @@
 <li><strong>Required</strong></li>
 </ul>
 <p>The URL of the Markdown document to include. This can be a local file or a remote document's URL (see <a href="/home/runner/work/amatl/amatl/doc/url-resolving/README.md">&quot;URL resolving&quot;</a>).</p>
+<h5 id="selectselector"><code>select=&quot;&lt;selector&gt;&quot;</code></h5>
+<ul>
+<li><strong>Optional</strong></li>
+<li><strong>Type: <code>string</code></strong></li>
+</ul>
+<p>Only include the top-level nodes of the included document that match the given selector. Uses the same selector syntax as the MCP server (see <a href="/home/runner/work/amatl/amatl/doc/mcp/README.md#-selector-syntax">&quot;MCP Server&quot;</a>).</p>
+<p>For example, to include only the <code>## API</code> section of a file:</p>
+<pre><code>:include{url=&quot;./reference.md&quot;, select=&quot;h2#api&quot;}
+</code></pre>
 <h5 id="fromheadingsheadinglevel"><code>fromHeadings=&quot;&lt;headingLevel&gt;&quot;</code></h5>
 <ul>
 <li><strong>Optional</strong></li>
@@ -382,6 +412,110 @@
 <p>To use a custom layout, provide the path or URL with the <code>--html-layout</code> flag:</p>
 <pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>amatl render markdown -o output.html --html-layout file://my-layout.html my-doc.md
 </span></span></code></pre><hr>
+<h2 id="mcp-server">MCP Server</h2>
+<p>Amatl includes a built-in <a href="https://modelcontextprotocol.io/">Model Context Protocol</a> (MCP) server. It allows an AI assistant or a compatible editor to interact with the Markdown files in a workspace directory.</p>
+<p>The server communicates over <strong>stdin/stdout</strong> (JSON-RPC 2.0 stdio transport).</p>
+<h3 id="-starting-the-server">🚀 Starting the server</h3>
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span>amatl mcp serve --workspace ./docs
+</span></span></code></pre><p>If <code>--workspace</code> is omitted, the current directory is used.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Alias</th>
+<th>Environment variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--workspace</code></td>
+<td><code>-w</code></td>
+<td><code>AMATL_MCP_WORKSPACE</code></td>
+<td>Root directory exposed to the server. Access is strictly confined to this directory.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-configuring-your-mcp-client">🔧 Configuring your MCP client</h3>
+<p>Most MCP clients expect a configuration entry similar to:</p>
+<pre style="color:#d8dee9;background-color:#2e3440;"><code><span style="display:flex;"><span><span style="color:#eceff4">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#81a1c1">&#34;mcpServers&#34;</span><span style="color:#eceff4">:</span> <span style="color:#eceff4">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#81a1c1">&#34;amatl&#34;</span><span style="color:#eceff4">:</span> <span style="color:#eceff4">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#81a1c1">&#34;command&#34;</span><span style="color:#eceff4">:</span> <span style="color:#a3be8c">&#34;amatl&#34;</span><span style="color:#eceff4">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#81a1c1">&#34;args&#34;</span><span style="color:#eceff4">:</span> <span style="color:#eceff4">[</span><span style="color:#a3be8c">&#34;mcp&#34;</span><span style="color:#eceff4">,</span> <span style="color:#a3be8c">&#34;serve&#34;</span><span style="color:#eceff4">,</span> <span style="color:#a3be8c">&#34;--workspace&#34;</span><span style="color:#eceff4">,</span> <span style="color:#a3be8c">&#34;/path/to/your/docs&#34;</span><span style="color:#eceff4">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#eceff4">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#eceff4">}</span>
+</span></span><span style="display:flex;"><span><span style="color:#eceff4">}</span>
+</span></span></code></pre><p>Refer to your client's documentation for the exact configuration format.</p>
+<h3 id="-available-tools">🛠️ Available tools</h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>list_files</code></td>
+<td>List files in the workspace, with optional glob pattern filtering.</td>
+</tr>
+<tr>
+<td><code>table_of_contents</code></td>
+<td>Return the hierarchical table of contents of a Markdown file.</td>
+</tr>
+<tr>
+<td><code>list_sections</code></td>
+<td>List all headings in a file as a flat list with their selectors.</td>
+</tr>
+<tr>
+<td><code>read_section</code></td>
+<td>Read the full content of a section (heading + body).</td>
+</tr>
+<tr>
+<td><code>find_sections</code></td>
+<td>Recursively find all nodes matching a selector.</td>
+</tr>
+<tr>
+<td><code>update_section</code></td>
+<td>Replace the content of a section in a Markdown file.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-selector-syntax">🔍 Selector syntax</h3>
+<p>Selectors are a CSS-like mini-language for targeting nodes in a Markdown document.</p>
+<table>
+<thead>
+<tr>
+<th>Example</th>
+<th>Matches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>h2#introduction</code></td>
+<td><code>## Introduction</code> heading via its auto-generated ID</td>
+</tr>
+<tr>
+<td><code>h2:contains(&quot;Usage&quot;)</code></td>
+<td><code>## Usage</code> heading matched by text</td>
+</tr>
+<tr>
+<td><code>code[lang=&quot;go&quot;]</code></td>
+<td>Fenced code block with language <code>go</code></td>
+</tr>
+<tr>
+<td><code>h2#api ~ table</code></td>
+<td>Table following the <code>## API</code> heading</td>
+</tr>
+<tr>
+<td><code>h2</code></td>
+<td>All level-2 headings</td>
+</tr>
+</tbody>
+</table>
+<p>IDs are automatically generated from heading text by the Markdown parser.</p>
+<hr>
 <h2 id="how-to">How to</h2>
 <h3 id="write-your-own-layout">Write your own layout</h3>
 <blockquote>
