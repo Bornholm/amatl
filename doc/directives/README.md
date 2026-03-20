@@ -16,7 +16,7 @@ Please take note of the linefeed before and after the directive. **They are requ
 
 Each directive triggers a specific behavior based on its type.
 
-## `:include{url="<url>", fromHeadings="<headingLevel>", shiftHeadings="<levelShift>"}`
+## `:include{url="<url>", select="<selector>", fromHeadings="<headingLevel>", shiftHeadings="<levelShift>"}`
 
 Include another Markdown file in your document.
 
@@ -27,6 +27,19 @@ Include another Markdown file in your document.
 - **Required**
 
 The URL of the Markdown document to include. This can be a local file or a remote document's URL (see ["URL resolving"](../url-resolving/README.md)).
+
+#### `select="<selector>"`
+
+- **Optional**
+- **Type: `string`**
+
+Only include the top-level nodes of the included document that match the given selector. Uses the same selector syntax as the MCP server (see ["MCP Server"](../mcp/README.md#-selector-syntax)).
+
+For example, to include only the `## API` section of a file:
+
+```
+:include{url="./reference.md", select="h2#api"}
+```
 
 #### `fromHeadings="<headingLevel>"`
 

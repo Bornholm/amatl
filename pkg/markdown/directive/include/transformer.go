@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/selector"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/Bornholm/amatl/pkg/transform"
@@ -84,6 +85,16 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	setSourcePath(includePC, resourcePath)
 
 	includedNode := t.Parser.Parse(includedReader, parser.WithContext(includePC))
+
+	selectAttr, _ := getNodeSelectAttribute(node)
+	if selectAttr != "" {
+		sel, err := selector.Parse(selectAttr)
+		if err != nil {
+			return errors.Wrapf(err, "could not parse 'select' attribute on :include directive for '%s'", resourcePath)
+		}
+		matchedNodes := sel.MatchTopLevel(includedNode, includedSource)
+		includedNode = buildFilteredDocument(matchedNodes)
+	}
 
 	if err := t.excludeSections(includedNode, fromHeadings); err != nil {
 		return errors.Wrapf(err, "could not exclude sections of included markdown resource '%s'", resourcePath)
@@ -300,4 +311,31 @@ func getSourcePath(ctx parser.Context, defaultSourcePath resolver.Path) resolver
 
 func setSourcePath(ctx parser.Context, path resolver.Path) {
 	ctx.Set(contextKeySourcePath, path)
+}
+
+const attrNameSelect = "select"
+
+func getNodeSelectAttribute(node ast.Node) (string, bool) {
+	selectAttrValue, exists := node.AttributeString(attrNameSelect)
+	if !exists {
+		return "", false
+	}
+	selectStr, ok := selectAttrValue.(string)
+	if !ok {
+		return "", false
+	}
+	return selectStr, true
+}
+
+// buildFilteredDocument creates a new ast.Document containing only the given nodes.
+func buildFilteredDocument(nodes []ast.Node) *ast.Document {
+	doc := ast.NewDocument()
+	for _, node := range nodes {
+		parent := node.Parent()
+		if parent != nil {
+			parent.RemoveChild(parent, node)
+		}
+		doc.AppendChild(doc, node)
+	}
+	return doc
 }

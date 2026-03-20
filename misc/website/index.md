@@ -31,6 +31,14 @@ menu:
             href: "#attrsattributes"
       - label: "Layouts"
         href: "#layouts"
+  - label: MCP Server
+    items:
+      - label: "Starting the server"
+        href: "#-starting-the-server"
+      - label: "Configuring your client"
+        href: "#-configuring-your-mcp-client"
+      - label: "Available tools"
+        href: "#-available-tools"
   - label: How to
     items:
       - label: "Write your own layout"
@@ -72,7 +80,8 @@ For example, this simple website is [generated with Amatl itself](./index.md).
 - Use [custom directives](#directives) to include others documents or generate tables of content;
 - Use [pre-defined or custom layouts](#layouts) to transform your content into presentations, report, etc
 - Use [Go templating](#variables-and-templating) to inject dynamic data into your document;
-- Rewrite you relative links and embed external resources.
+- Rewrite you relative links and embed external resources;
+- Expose your Markdown workspace to AI assistants via the built-in [MCP server](#mcp-server).
 
 > **Why the name `amatl` ?**
 >
@@ -111,6 +120,10 @@ Amatl is a [free software project](https://github.com/Bornholm/amatl) published 
 ---
 
 :include{url="../../doc/layouts/README.md", shiftHeadings="1"}
+
+---
+
+:include{url="../../doc/mcp/README.md", shiftHeadings="1"}
 
 ---
 

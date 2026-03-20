@@ -11,6 +11,7 @@
 - [Templating](./templating/README.md)
 - [Directives](./directives/README.md)
 - [Layouts](./layouts/README.md)
+- [MCP Server](./mcp/README.md)
 
 ## Examples
 
