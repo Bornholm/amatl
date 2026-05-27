@@ -15,7 +15,7 @@ import (
 const Scheme = "amatl"
 
 var (
-	//go:embed templates/*.html
+	//go:embed templates/*.html assets/*
 	templateFs embed.FS
 )
 
@@ -43,12 +43,14 @@ type Resolver struct {
 func (*Resolver) Resolve(ctx context.Context, path resolver.Path) (io.ReadCloser, error) {
 	filename := path.Host()
 
-	file, err := templateFs.Open("templates/" + filename)
-	if err != nil {
-		return nil, errors.WithStack(err)
+	for _, dir := range []string{"templates", "assets"} {
+		file, err := templateFs.Open(dir + "/" + filename)
+		if err == nil {
+			return file, nil
+		}
 	}
 
-	return file, nil
+	return nil, errors.Errorf("amatl: resource %q not found", filename)
 }
 
 func NewResolver() *Resolver {
