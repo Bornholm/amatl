@@ -19,6 +19,10 @@ type Node struct {
 	// column of the opening fence, from the beginning of the line
 	column int
 	closed bool
+	// source offsets of the opening fence start and of the closing fence end,
+	// -1 when the container has no closing fence
+	start int
+	stop  int
 }
 
 // Name returns the directive name
@@ -29,6 +33,13 @@ func (n *Node) Name() string {
 // FenceLength returns the number of colons used to open the container
 func (n *Node) FenceLength() int {
 	return n.fenceLength
+}
+
+// SourceRange returns the [start, stop) byte range of the container in the
+// source, fences included. stop is -1 when no closing fence ends the
+// container, for example at the end of the document.
+func (n *Node) SourceRange() (start int, stop int) {
+	return n.start, n.stop
 }
 
 // Kind implements ast.Node.
@@ -48,6 +59,8 @@ func NewNode(name string, fenceLength int, column int) *Node {
 		name:        name,
 		fenceLength: fenceLength,
 		column:      column,
+		start:       -1,
+		stop:        -1,
 	}
 }
 

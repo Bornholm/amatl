@@ -73,6 +73,7 @@ func (p *BlockParser) Open(parent ast.Node, reader text.Reader, pc parser.Contex
 	}
 
 	node := NewNode(name, fenceLength, reader.LineOffset()+pc.BlockIndent())
+	node.start = segment.Start
 
 	for _, attr := range attributes {
 		node.SetAttribute(attr.Name, directive.NormalizeAttributeValue(attr.Value))
@@ -103,6 +104,7 @@ func (p *BlockParser) Continue(node ast.Node, reader text.Reader, pc parser.Cont
 	}
 
 	advanceLine(reader, line, segment)
+	container.stop = segment.Stop
 
 	return parser.Close
 }

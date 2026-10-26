@@ -44,6 +44,8 @@ Refer to your client's documentation for the exact configuration format.
 | `find_sections` | Recursively find all nodes matching a selector. |
 | `update_section` | Replace the content of a section in a Markdown file. |
 
+The tools read [container directives](../directives/README.md#container-directives) the way `amatl render` does. A section that contains a `:::card` block includes the whole block, fences included. A heading written inside a block shows up in `table_of_contents`, `list_sections` and `find_sections`. It does not start a section, so `read_section` and `update_section` reject its selector. Target the top-level heading above the block instead.
+
 ## 🔍 Selector syntax
 
 Selectors are a CSS-like mini-language for targeting nodes in a Markdown document.
