@@ -76,6 +76,6 @@ Every [Sprig](https://masterminds.github.io/sprig/) function is available, plus 
 This layout puts the first heading in a banner and the rest of the document below it:
 
 ```html
-<header class="banner">{{ htmlQueryFirst .Body "h1:first-of-type" }}</header>
-<main>{{ htmlRemove .Body "h1:first-of-type" }}</main>
+<header class="banner">{{"{{"}} htmlQueryFirst .Body "h1:first-of-type" {{"}}"}}</header>
+<main>{{"{{"}} htmlRemove .Body "h1:first-of-type" {{"}}"}}</main>
 ```
