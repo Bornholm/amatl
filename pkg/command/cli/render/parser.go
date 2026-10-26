@@ -6,6 +6,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/markdown/dataurl"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/attrs"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/toc"
 	"github.com/Bornholm/amatl/pkg/markdown/linkrewriter"
@@ -32,6 +33,7 @@ func newParser(sourcePath resolver.Path, opts ParserOptions) parser.Parser {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
+			&container.Extension{},
 			&mermaid.Extender{
 				RenderMode: mermaid.RenderModeClient,
 			},
