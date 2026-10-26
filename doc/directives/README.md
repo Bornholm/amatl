@@ -95,7 +95,7 @@ Sovereign hosting, end-to-end encryption.
 :::
 ```
 
-Containers can be nested. A closing fence always closes the innermost opened container, so the same fence length can be used at every level:
+Containers can be nested. A closing fence closes the innermost opened container, so the same fence length can be used at every level:
 
 ```
 :::columns{count=3}
@@ -110,6 +110,8 @@ Containers can be nested. A closing fence always closes the innermost opened con
 :::
 :::
 ```
+
+A closing fence less indented than the opening fence of the innermost container, for example a fence at the beginning of the line while the innermost container is inside a list item, closes the outer container instead.
 
 Other directives, such as `:include{}`, can be used inside containers.
 

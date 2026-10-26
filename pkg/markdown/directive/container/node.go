@@ -16,7 +16,9 @@ type Node struct {
 	ast.BaseBlock
 	name        string
 	fenceLength int
-	closed      bool
+	// column of the opening fence, from the beginning of the line
+	column int
+	closed bool
 }
 
 // Name returns the directive name
@@ -41,10 +43,11 @@ func (n *Node) Dump(source []byte, level int) {
 	}, nil)
 }
 
-func NewNode(name string, fenceLength int) *Node {
+func NewNode(name string, fenceLength int, column int) *Node {
 	return &Node{
 		name:        name,
 		fenceLength: fenceLength,
+		column:      column,
 	}
 }
 

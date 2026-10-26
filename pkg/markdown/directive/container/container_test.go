@@ -92,6 +92,149 @@ One
 `,
 	},
 	{
+		Name: "longer closing fence closes the innermost container",
+		Source: `::::outer
+:::inner
+One
+::::
+Two
+::::
+`,
+		Expected: `<div class="amatl-outer">
+<div class="amatl-inner">
+<p>One</p>
+</div>
+<p>Two</p>
+</div>
+`,
+	},
+	{
+		Name: "indented nested containers",
+		Source: `:::columns
+  :::card
+  One
+  :::
+:::
+`,
+		Expected: `<div class="amatl-columns">
+<div class="amatl-card">
+<p>One</p>
+</div>
+</div>
+`,
+	},
+	{
+		Name: "fence in list item closes the inner container",
+		Source: `:::outer
+- item
+
+  :::inner
+  One
+  :::
+:::
+After
+`,
+		Expected: `<div class="amatl-outer">
+<ul>
+<li>
+<p>item</p>
+<div class="amatl-inner">
+<p>One</p>
+</div>
+</li>
+</ul>
+</div>
+<p>After</p>
+`,
+	},
+	{
+		Name: "dedented fence closes the outer container",
+		Source: `:::outer
+- item
+
+  :::inner
+  One
+
+:::
+After
+`,
+		Expected: `<div class="amatl-outer">
+<ul>
+<li>
+<p>item</p>
+<div class="amatl-inner">
+<p>One</p>
+</div>
+</li>
+</ul>
+</div>
+<p>After</p>
+`,
+	},
+	{
+		Name: "dedented fence after lazy continuation closes the outer container",
+		Source: `:::outer
+- item
+
+  :::inner
+  One
+:::
+After
+`,
+		Expected: `<div class="amatl-outer">
+<ul>
+<li>
+<p>item</p>
+<div class="amatl-inner">
+<p>One</p>
+</div>
+</li>
+</ul>
+</div>
+<p>After</p>
+`,
+	},
+	{
+		Name: "inside blockquote",
+		Source: `:::outer
+> :::inner
+> One
+> :::
+:::
+`,
+		Expected: `<div class="amatl-outer">
+<blockquote>
+<div class="amatl-inner">
+<p>One</p>
+</div>
+</blockquote>
+</div>
+`,
+	},
+	{
+		Name:   "tab indented fences in list item",
+		Source: "- item\n\n\t:::card\n\tOne\n\t:::\n\nAfter\n",
+		Expected: `<ul>
+<li>
+<p>item</p>
+<div class="amatl-card">
+<p>One</p>
+</div>
+</li>
+</ul>
+<p>After</p>
+`,
+	},
+	{
+		Name:   "CRLF line endings",
+		Source: ":::card\r\nOne\r\n:::\r\nAfter\r\n",
+		Expected: `<div class="amatl-card">
+<p>One</p>
+</div>
+<p>After</p>
+`,
+	},
+	{
 		Name: "interrupts paragraph",
 		Source: `Before
 :::card
