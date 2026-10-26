@@ -14,6 +14,8 @@ A directive takes this form:
 
 Please take note of the linefeed before and after the directive. **They are required**.
 
+An attribute value is either a quoted string or a bare number or boolean: `minLevel="2"` and `minLevel=2` mean the same thing.
+
 See also ["Container directives"](#container-directives) to wrap several blocks of content.
 
 Each directive triggers a specific behavior based on its type.
@@ -83,9 +85,9 @@ Assign the given attributes to the following element (for example `class`, `id`,
 
 ## Container directives
 
-Container directives wrap several blocks of Markdown in an HTML element, which makes it possible to build layouts (columns, cards, callouts, sections...) without writing raw HTML.
+A container directive wraps several Markdown blocks in one HTML element. Use it to lay out columns, cards or sections without writing HTML.
 
-A container is opened by a line of at least three colons followed by its name and optional attributes, and closed by a line of at least the same number of colons:
+A line of three or more colons, followed by a name and optional attributes, opens a container. A line of at least as many colons closes it:
 
 ```
 :::card{#security .highlight}
@@ -95,7 +97,7 @@ Sovereign hosting, end-to-end encryption.
 :::
 ```
 
-Containers can be nested. A closing fence closes the innermost opened container, so the same fence length can be used at every level:
+Containers nest. A closing fence closes the innermost open container, so you can use three colons at every level:
 
 ```
 :::columns{count=3}
@@ -111,27 +113,31 @@ Containers can be nested. A closing fence closes the innermost opened container,
 :::
 ```
 
-A closing fence less indented than the opening fence of the innermost container, for example a fence at the beginning of the line while the innermost container is inside a list item, closes the deepest container whose opening fence is not more indented than the closing fence, along with everything opened inside it.
+Indentation matters when a container sits in a list item. A closing fence closes the deepest open container whose opening fence is not more indented than the closing fence. Everything opened inside that container closes with it. In practice, indent a closing fence like its opening fence.
 
-Other directives, such as `:include{}`, can be used inside containers.
+Other directives work inside a container, `:include{}` included.
 
-### HTML rendering
+### HTML output
 
-- The element receives the `amatl-<name>` class, merged with the classes given in the attributes.
-- The `article`, `aside`, `figcaption`, `figure`, `footer`, `header`, `main`, `nav` and `section` containers are rendered with the matching HTML element, other names with a `<div>`.
-- Global HTML attributes (`id`, `class`, `style`, `title`, `role`...) as well as `data-*` and `aria-*` attributes are rendered as is. Other attributes are rendered as `data-*` attributes: `:::columns{count=3}` gives `<div class="amatl-columns" data-count="3">`.
+The container becomes an element with the `amatl-<name>` class, plus the classes given in its attributes.
 
-An `:attrs{}` directive placed just before a container applies its attributes to the container.
+The `article`, `aside`, `figcaption`, `figure`, `footer`, `header`, `main`, `nav` and `section` containers use the HTML element of the same name. Any other name gives a `<div>`.
+
+Global HTML attributes such as `id`, `class`, `style`, `title` or `role` are copied as they are, and so are `data-*` and `aria-*` attributes. Any other attribute becomes a `data-*` attribute. For example, `:::columns{count=3}` gives `<div class="amatl-columns" data-count="3">`.
+
+An `:attrs{}` directive placed right before a container adds its attributes to the container.
 
 ### Built-in styles
 
-The built-in layouts include the `amatl://components.css` stylesheet, which provides default styles for the following containers:
+The built-in layouts load `amatl://components.css`, which styles four containers:
 
-| Container  | Description                                                                         |
-| ---------- | ----------------------------------------------------------------------------------- |
-| `columns`  | Lays out its children in columns. The number of columns is set with `count` (1 to 6, defaults to 2). |
-| `grid`     | Lays out its children in a responsive grid.                                         |
-| `card`     | A bordered box.                                                                     |
-| `callout`  | A highlighted box with an accent border.                                            |
+| Container | Rendering                                                                 |
+| --------- | ------------------------------------------------------------------------- |
+| `columns` | one column per child, 2 by default, set `count` from 1 to 6 to change it  |
+| `grid`    | as many columns as fit the page width                                     |
+| `card`    | a box with a border and rounded corners                                   |
+| `callout` | a tinted box with a colored left border                                   |
 
-These styles can be tuned with CSS custom properties (`--amatl-gap`, `--amatl-grid-min`, `--amatl-radius`, `--amatl-border-color`, `--amatl-card-bg`, `--amatl-accent`, `--amatl-callout-bg`). Containers with any other name get no default style and can be styled with your own stylesheet through their `amatl-<name>` class.
+Change the spacing and colors with these CSS custom properties: `--amatl-gap`, `--amatl-grid-min`, `--amatl-radius`, `--amatl-border-color`, `--amatl-card-bg`, `--amatl-accent` and `--amatl-callout-bg`.
+
+A container with any other name has no default style. Style it in your own layout through its `amatl-<name>` class.
