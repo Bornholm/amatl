@@ -42,6 +42,17 @@ Hello
 `,
 	},
 	{
+		Name: "escaped attribute value",
+		Source: `:::card{title="Say \"hi\" \\o/"}
+Hello
+:::
+`,
+		Expected: `<div class="amatl-card" title="Say &quot;hi&quot; \o/">
+<p>Hello</p>
+</div>
+`,
+	},
+	{
 		Name: "semantic tag",
 		Source: `:::section{.hero}
 ## Title
