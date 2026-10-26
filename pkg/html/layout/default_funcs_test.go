@@ -40,6 +40,19 @@ func TestHTMLRemove(t *testing.T) {
 	}
 }
 
+func TestHTMLRemoveKeepsTopLevelNodes(t *testing.T) {
+	body := template.HTML(`<!-- lead --><h1>Title</h1><p>Content</p><!-- tail -->`)
+
+	html, err := htmlRemove(body, "h1")
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	if e, g := template.HTML(`<!-- lead --><p>Content</p><!-- tail -->`), html; e != g {
+		t.Errorf("htmlRemove: expected '%s', got '%s'", e, g)
+	}
+}
+
 func TestHTMLAddAttr(t *testing.T) {
 	body := template.HTML(`<p class="a">One</p><p>Two</p>`)
 

@@ -304,26 +304,48 @@ func walk(n *html.Node, fn func(n *html.Node) error) error {
 
 // renderFragment renders the content of a document parsed with html.Parse
 // without the <html>, <head> and <body> elements added by the parser.
-// Elements the parser moved to the <head> (i.e. a leading <style>) are kept.
+// Every other node is rendered in document order, including the ones the
+// parser moved to the <head> (i.e. a leading <style>) or attached to the
+// document itself (i.e. a leading comment).
 func renderFragment(root *html.Node) (template.HTML, error) {
 	var buf bytes.Buffer
 
-	err := walk(root, func(n *html.Node) error {
-		if n.Type != html.ElementNode || (n.Data != "head" && n.Data != "body") || n.Parent == nil || n.Parent.Data != "html" {
-			return nil
-		}
-
+	var render func(n *html.Node) error
+	render = func(n *html.Node) error {
 		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			if isParserWrapper(child) {
+				if err := render(child); err != nil {
+					return errors.WithStack(err)
+				}
+				continue
+			}
+
 			if err := html.Render(&buf, child); err != nil {
 				return errors.WithStack(err)
 			}
 		}
 
 		return nil
-	})
-	if err != nil {
+	}
+
+	if err := render(root); err != nil {
 		return "", errors.WithStack(err)
 	}
 
 	return template.HTML(buf.String()), nil
+}
+
+func isParserWrapper(n *html.Node) bool {
+	if n.Type != html.ElementNode || n.Parent == nil {
+		return false
+	}
+
+	switch n.Data {
+	case "html":
+		return n.Parent.Type == html.DocumentNode
+	case "head", "body":
+		return n.Parent.Type == html.ElementNode && n.Parent.Data == "html" && n.Parent.Parent != nil && n.Parent.Parent.Type == html.DocumentNode
+	default:
+		return false
+	}
 }
