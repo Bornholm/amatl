@@ -17,8 +17,11 @@ const (
 //
 // A container is opened by a fence of at least three colons followed by
 // a name and optional attributes, and closed by a fence of at least the same
-// length. A closing fence always closes the innermost opened container,
-// so containers can be nested with fences of the same length.
+// length. A closing fence closes the innermost opened container, so containers
+// can be nested with fences of the same length, unless the fence is less
+// indented than that container's opening fence (e.g. a fence at the beginning
+// of the line when the innermost container is inside a list item): it then
+// closes the outer container and, implicitly, everything opened inside it.
 type BlockParser struct {
 }
 
@@ -68,7 +71,7 @@ func (p *BlockParser) Open(parent ast.Node, reader text.Reader, pc parser.Contex
 		attributes = attrs
 	}
 
-	node := NewNode(name, fenceLength)
+	node := NewNode(name, fenceLength, reader.LineOffset()+pc.BlockIndent())
 
 	for _, attr := range attributes {
 		node.SetAttribute(attr.Name, directive.NormalizeAttributeValue(attr.Value))
@@ -88,12 +91,13 @@ func (p *BlockParser) Continue(node ast.Node, reader text.Reader, pc parser.Cont
 
 	line, segment := reader.PeekLine()
 
-	if !isClosingFence(line, reader.LineOffset(), container.fenceLength) {
+	column, ok := closingFenceColumn(line, reader.LineOffset(), container.fenceLength)
+	if !ok {
 		return parser.Continue | parser.HasChildren
 	}
 
 	// Let the innermost opened container consume the closing fence
-	if hasOpenedContainer(container) {
+	if inner := innermostOpenedContainer(container); inner != nil && column >= inner.column {
 		return parser.Continue | parser.HasChildren
 	}
 
@@ -119,28 +123,32 @@ func (p *BlockParser) CanAcceptIndentedLine() bool {
 	return false
 }
 
-func isClosingFence(line []byte, lineOffset int, fenceLength int) bool {
+// closingFenceColumn returns the column of the closing fence found on the
+// given line, if any
+func closingFenceColumn(line []byte, lineOffset int, fenceLength int) (int, bool) {
 	w, pos := util.IndentWidth(line, lineOffset)
 	if w > 3 || pos >= len(line) {
-		return false
+		return 0, false
 	}
 
 	length := countFence(line[pos:])
-	if length < fenceLength {
-		return false
+	if length < fenceLength || !util.IsBlank(line[pos+length:]) {
+		return 0, false
 	}
 
-	return util.IsBlank(line[pos+length:])
+	return lineOffset + w, true
 }
 
-func hasOpenedContainer(node ast.Node) bool {
+func innermostOpenedContainer(node ast.Node) *Node {
+	var innermost *Node
+
 	for child := node.LastChild(); child != nil; child = child.LastChild() {
 		if container, ok := child.(*Node); ok && !container.closed {
-			return true
+			innermost = container
 		}
 	}
 
-	return false
+	return innermost
 }
 
 func advanceLine(reader text.Reader, line []byte, segment text.Segment) {
