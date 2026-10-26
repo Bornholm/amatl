@@ -111,7 +111,7 @@ Containers can be nested. A closing fence closes the innermost opened container,
 :::
 ```
 
-A closing fence less indented than the opening fence of the innermost container, for example a fence at the beginning of the line while the innermost container is inside a list item, closes the outer container instead.
+A closing fence less indented than the opening fence of the innermost container, for example a fence at the beginning of the line while the innermost container is inside a list item, closes the deepest container whose opening fence is not more indented than the closing fence, along with everything opened inside it.
 
 Other directives, such as `:include{}`, can be used inside containers.
 

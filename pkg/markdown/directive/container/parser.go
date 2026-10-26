@@ -18,10 +18,11 @@ const (
 // A container is opened by a fence of at least three colons followed by
 // a name and optional attributes, and closed by a fence of at least the same
 // length. A closing fence closes the innermost opened container, so containers
-// can be nested with fences of the same length, unless the fence is less
-// indented than that container's opening fence (e.g. a fence at the beginning
-// of the line when the innermost container is inside a list item): it then
-// closes the outer container and, implicitly, everything opened inside it.
+// can be nested with fences of the same length. A fence less indented than
+// the innermost container's opening fence (e.g. a fence at the beginning of
+// the line when the innermost container is inside a list item) closes the
+// deepest container whose opening fence is not more indented than itself and,
+// implicitly, everything opened inside it.
 type BlockParser struct {
 }
 
@@ -96,8 +97,8 @@ func (p *BlockParser) Continue(node ast.Node, reader text.Reader, pc parser.Cont
 		return parser.Continue | parser.HasChildren
 	}
 
-	// Let the innermost opened container consume the closing fence
-	if inner := innermostOpenedContainer(container); inner != nil && column >= inner.column {
+	// Let a nested opened container consume the closing fence
+	if target := closingTarget(container, column); target != container {
 		return parser.Continue | parser.HasChildren
 	}
 
@@ -139,16 +140,20 @@ func closingFenceColumn(line []byte, lineOffset int, fenceLength int) (int, bool
 	return lineOffset + w, true
 }
 
-func innermostOpenedContainer(node ast.Node) *Node {
-	var innermost *Node
+// closingTarget returns the container a closing fence at the given column
+// closes: the deepest opened container, starting from the given one, whose
+// opening fence is not more indented than the closing fence. The given
+// container is returned when the fence is less indented than all of them.
+func closingTarget(container *Node, column int) *Node {
+	target := container
 
-	for child := node.LastChild(); child != nil; child = child.LastChild() {
-		if container, ok := child.(*Node); ok && !container.closed {
-			innermost = container
+	for child := container.LastChild(); child != nil; child = child.LastChild() {
+		if nested, ok := child.(*Node); ok && !nested.closed && nested.column <= column {
+			target = nested
 		}
 	}
 
-	return innermost
+	return target
 }
 
 func advanceLine(reader text.Reader, line []byte, segment text.Segment) {
