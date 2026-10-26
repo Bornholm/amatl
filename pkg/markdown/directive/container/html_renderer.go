@@ -2,6 +2,7 @@ package container
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/pkg/errors"
@@ -29,8 +30,18 @@ var semanticTags = map[string]struct{}{
 	"section":    {},
 }
 
+// AttrNameBackground is the attribute holding the URL of a container
+// background image
+const AttrNameBackground = "bg"
+
+// BackgroundProperty is the CSS custom property receiving the background
+// image of a container
+const BackgroundProperty = "--amatl-bg"
+
 var (
 	attrNameClass = []byte("class")
+	attrNameStyle = []byte("style")
+	attrNameBg    = []byte(AttrNameBackground)
 	dataPrefix    = []byte("data-")
 	ariaPrefix    = []byte("aria-")
 )
@@ -40,6 +51,8 @@ var (
 // The element receives the "amatl-<name>" class. Global HTML attributes
 // (id, class, style, role...) as well as data-* and aria-* attributes are
 // rendered as is, other attributes are rendered as data-* attributes.
+// The bg attribute is rendered as the --amatl-bg custom property of the
+// style attribute.
 type HTMLRenderer struct {
 }
 
@@ -72,8 +85,20 @@ func (r *HTMLRenderer) render(w util.BufWriter, source []byte, n ast.Node, enter
 
 	writeAttribute(w, attrNameClass, class)
 
+	style, hasStyle := containerStyle(node)
+
 	for _, attr := range node.Attributes() {
 		if bytes.Equal(attr.Name, attrNameClass) {
+			continue
+		}
+
+		// Write the style once, at the position of the style attribute or,
+		// without one, at the position of the bg attribute
+		if bytes.Equal(attr.Name, attrNameStyle) || bytes.Equal(attr.Name, attrNameBg) {
+			if hasStyle {
+				writeAttribute(w, attrNameStyle, style)
+				hasStyle = false
+			}
 			continue
 		}
 
@@ -88,6 +113,39 @@ func (r *HTMLRenderer) render(w util.BufWriter, source []byte, n ast.Node, enter
 	_, _ = w.WriteString(">\n")
 
 	return ast.WalkContinue, nil
+}
+
+// containerStyle returns the style attribute of the container, with the
+// background image appended as a custom property
+func containerStyle(node *Node) (string, bool) {
+	var style string
+
+	value, hasStyle := node.AttributeString(string(attrNameStyle))
+	if hasStyle {
+		style = directive.AttributeValueString(value)
+	}
+
+	value, hasBg := node.AttributeString(AttrNameBackground)
+	if !hasBg {
+		return style, hasStyle
+	}
+
+	bg := directive.AttributeValueString(value)
+	if bg == "" {
+		return style, hasStyle
+	}
+
+	if style = strings.TrimRight(strings.TrimSpace(style), ";"); style != "" {
+		style += "; "
+	}
+
+	return style + BackgroundProperty + ": url(" + cssString(bg) + ")", true
+}
+
+// cssString quotes the given value as a CSS string
+func cssString(value string) string {
+	value = strings.NewReplacer(`\`, `\\`, `"`, `\"`, "\n", "", "\r", "").Replace(value)
+	return `"` + value + `"`
 }
 
 // Tag returns the HTML element used to render a container with the given name

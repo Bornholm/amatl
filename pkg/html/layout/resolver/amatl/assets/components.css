@@ -5,6 +5,10 @@
  * attributes are exposed as data-* attributes, i.e. :::columns{count=3}
  * gives <div class="amatl-columns" data-count="3">.
  *
+ * The bg attribute sets a background image on any container:
+ * :::section{bg="./cover.jpg"} gives
+ * <section class="amatl-section" style="--amatl-bg: url(...)">.
+ *
  * Styles can be tuned with the following custom properties:
  *
  *   --amatl-gap           spacing between columns and grid items
@@ -34,6 +38,12 @@
 [class^="amatl-"] > :last-child,
 [class*=" amatl-"] > :last-child {
   margin-bottom: 0;
+}
+
+[style*="--amatl-bg"] {
+  background-image: var(--amatl-bg);
+  background-position: center;
+  background-size: cover;
 }
 
 .amatl-columns,

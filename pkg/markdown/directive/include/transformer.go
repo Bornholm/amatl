@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	"github.com/Bornholm/amatl/pkg/markdown/selector"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -209,6 +210,19 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, basePath resolver.
 			}
 
 			n.Destination = []byte(destination)
+		case *container.Node:
+			value, exists := n.AttributeString(container.AttrNameBackground)
+			if !exists {
+				return ast.WalkContinue, nil
+			}
+
+			destination := directive.AttributeValueString(value)
+
+			if destination == "" || isURL(destination) || filepath.IsAbs(destination) {
+				return ast.WalkContinue, nil
+			}
+
+			n.SetAttributeString(container.AttrNameBackground, []byte(dirPath.JoinPath(destination).String()))
 		default:
 			return ast.WalkContinue, nil
 		}
