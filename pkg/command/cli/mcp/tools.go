@@ -11,9 +11,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/Bornholm/amatl/pkg/markdown/selector"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	mdrenderer "github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown/node"
+	"github.com/Bornholm/amatl/pkg/markdown/selector"
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/pkg/errors"
 	"github.com/yuin/goldmark"
@@ -397,7 +398,7 @@ func parseMarkdownFile(root *os.Root, name string) (ast.Node, []byte, error) {
 		return nil, nil, errors.Wrapf(err, "could not read file %q", name)
 	}
 
-	md := goldmark.New(goldmark.WithExtensions(extension.GFM))
+	md := goldmark.New(goldmark.WithExtensions(extension.GFM, &container.Extension{}))
 	p := md.Parser()
 	p.AddOptions(goldmarkparser.WithAutoHeadingID())
 
@@ -407,7 +408,13 @@ func parseMarkdownFile(root *os.Root, name string) (ast.Node, []byte, error) {
 
 func renderNodesToMarkdown(nodes []ast.Node, source []byte) (string, error) {
 	mr := mdrenderer.NewRenderer()
-	mr.AddMarkdownOptions(mdrenderer.WithNodeRenderers(node.Renderers()))
+	mr.AddMarkdownOptions(
+		mdrenderer.WithNodeRenderers(node.Renderers()),
+		mdrenderer.WithNodeRenderer(
+			container.Kind,
+			node.WithLineSpacingBefore(&container.MarkdownRenderer{}, 2),
+		),
+	)
 
 	var buf bytes.Buffer
 	for i, n := range nodes {
@@ -422,25 +429,43 @@ func renderNodesToMarkdown(nodes []ast.Node, source []byte) (string, error) {
 }
 
 // nodeSourceRange returns the [start, end) byte range of the given nodes.
+// Container blocks such as lists and blockquotes hold no lines of their own,
+// so the range covers the lines of every descendant, and the fences of
+// container directives.
 // ATX headings store only the content (after '## ') in their Lines(), so
 // we walk back to the true start of the line.
 func nodeSourceRange(nodes []ast.Node, source []byte) (start, end int) {
 	start = math.MaxInt
 	end = 0
+	extend := func(s, e int) {
+		if s < start {
+			start = s
+		}
+		if e > end {
+			end = e
+		}
+	}
 	for _, n := range nodes {
-		lines := n.Lines()
-		if lines == nil {
-			continue
-		}
-		for i := 0; i < lines.Len(); i++ {
-			seg := lines.At(i)
-			if seg.Start < start {
-				start = seg.Start
+		_ = ast.Walk(n, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+			if !entering || n.Type() != ast.TypeBlock {
+				return ast.WalkContinue, nil
 			}
-			if seg.Stop > end {
-				end = seg.Stop
+			if c, ok := n.(*container.Node); ok {
+				s, e := c.SourceRange()
+				if s >= 0 {
+					extend(s, s)
+				}
+				if e >= 0 {
+					extend(e, e)
+				}
 			}
-		}
+			lines := n.Lines()
+			for i := 0; i < lines.Len(); i++ {
+				seg := lines.At(i)
+				extend(seg.Start, seg.Stop)
+			}
+			return ast.WalkContinue, nil
+		})
 	}
 	if start == math.MaxInt {
 		return -1, -1

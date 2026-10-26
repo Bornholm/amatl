@@ -405,6 +405,43 @@ func TestMarshalAttributes(t *testing.T) {
 	}
 }
 
+func TestSourceRange(t *testing.T) {
+	source := []byte("Intro\n\n:::columns\n:::card\nText\n:::\n:::\n\n:::unclosed\nEnd\n")
+
+	md := goldmark.New(goldmark.WithExtensions(&Extension{}))
+	doc := md.Parser().Parse(text.NewReader(source))
+
+	columns, ok := doc.FirstChild().NextSibling().(*Node)
+	if !ok {
+		t.Fatalf("expected *container.Node, got %T", doc.FirstChild().NextSibling())
+	}
+
+	start, stop := columns.SourceRange()
+	if e, g := ":::columns\n:::card\nText\n:::\n:::\n", string(source[start:stop]); e != g {
+		t.Errorf("SourceRange: expected %q, got %q", e, g)
+	}
+
+	card, ok := columns.FirstChild().(*Node)
+	if !ok {
+		t.Fatalf("expected *container.Node, got %T", columns.FirstChild())
+	}
+
+	start, stop = card.SourceRange()
+	if e, g := ":::card\nText\n:::\n", string(source[start:stop]); e != g {
+		t.Errorf("SourceRange: expected %q, got %q", e, g)
+	}
+
+	unclosed, ok := columns.NextSibling().(*Node)
+	if !ok {
+		t.Fatalf("expected *container.Node, got %T", columns.NextSibling())
+	}
+
+	start, stop = unclosed.SourceRange()
+	if e, g := ":::unclosed\nEnd\n", string(source[start:]); e != g || stop != -1 {
+		t.Errorf("SourceRange: expected %q and -1, got %q and %d", e, g, stop)
+	}
+}
+
 func renderHTML(t *testing.T, source []byte) string {
 	t.Helper()
 
