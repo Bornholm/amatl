@@ -65,3 +65,27 @@ func TestHTMLAddAttr(t *testing.T) {
 		t.Errorf("htmlAddAttr: expected '%s', got '%s'", e, g)
 	}
 }
+
+func TestHTMLSplitKeepsNestedRules(t *testing.T) {
+	body := template.HTML(`<h1>One</h1><div class="amatl-columns"><p>A</p><hr><p>B</p></div><hr><h1>Two</h1>`)
+
+	parts, err := htmlSplit(body, "hr")
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	expected := []template.HTML{
+		`<h1>One</h1><div class="amatl-columns"><p>A</p><hr/><p>B</p></div>`,
+		`<h1>Two</h1>`,
+	}
+
+	if len(parts) != len(expected) {
+		t.Fatalf("htmlSplit: expected %d parts, got %d: %q", len(expected), len(parts), parts)
+	}
+
+	for i := range expected {
+		if expected[i] != parts[i] {
+			t.Errorf("htmlSplit: part %d: expected '%s', got '%s'", i, expected[i], parts[i])
+		}
+	}
+}
