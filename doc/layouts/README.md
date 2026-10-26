@@ -65,9 +65,9 @@ Every [Sprig](https://masterminds.github.io/sprig/) function is available, plus 
 | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
 | `htmlQueryFirst .Body "h1"`               | the first matching element, as HTML, or an empty string                                   |
 | `htmlQueryAll .Body "h2"`                 | every matching element, as a list of HTML strings                                         |
-| `htmlTextContent .Body "h1:first-of-type"` | the text of the matching elements, without tags                                           |
+| `htmlTextContent .Body "h1:first-of-type"` | the text of the matching elements, without tags. When several elements match, their texts run together with no space between them |
 | `htmlRemove .Body "h1:first-of-type"`     | the HTML without the matching elements                                                    |
-| `htmlAddAttr .Body "table" "class" "wide"` | the HTML with the value added to the attribute of each matching element, or the attribute created |
+| `htmlAddAttr .Body "table" "class" "wide"` | the HTML with the value appended after a space to the attribute of each matching element, or the attribute created. Use it for attributes that hold a list, such as `class` or `rel`. On `id`, it gives `id="data wide"` |
 | `htmlSplit .Body "hr"`                    | the top-level content cut at each matching element, as a list of HTML strings             |
 | `resolve .Context "./logo.svg" "image/svg+xml"` | the resource as a `data:` URL, with the given MIME type or a detected one          |
 
