@@ -138,6 +138,8 @@ The built-in layouts load `amatl://components.css`, which styles four containers
 | `card`    | a box with a border and rounded corners                                   |
 | `callout` | a tinted box with a colored left border                                   |
 
+In `columns` and `grid`, a horizontal rule (`---`) spans the whole row instead of taking a cell.
+
 Change the spacing and colors with these CSS custom properties: `--amatl-gap`, `--amatl-grid-min`, `--amatl-radius`, `--amatl-border-color`, `--amatl-card-bg`, `--amatl-accent` and `--amatl-callout-bg`.
 
 A container with any other name has no default style. Style it in your own layout through its `amatl-<name>` class.

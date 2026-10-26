@@ -18,7 +18,7 @@ A print-friendly layout for reports and other text-heavy documents, in A4 by def
 
 ### `amatl://presentation.html`
 
-Turns the document into slides. A horizontal rule (`---`) starts a new slide.
+Turns the document into slides. A horizontal rule (`---`) starts a new slide when it sits at the top level of the document. Inside a container directive or a blockquote, `---` stays a visible rule in the current slide.
 
 [View a sample presentation (PDF)](../../examples/presentation/presentation.pdf)
 

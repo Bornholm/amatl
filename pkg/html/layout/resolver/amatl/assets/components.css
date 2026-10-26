@@ -93,6 +93,12 @@
   break-inside: avoid;
 }
 
+/* A horizontal rule spans the whole row instead of filling one cell */
+.amatl-columns > hr,
+.amatl-grid > hr {
+  grid-column: 1 / -1;
+}
+
 /* Spacing between items is handled by the grid gap */
 .amatl-columns > *,
 .amatl-grid > * {
