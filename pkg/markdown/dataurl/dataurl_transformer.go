@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
@@ -40,6 +42,24 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 			}
 
 			typ.Destination = []byte(dataURL.String())
+
+		case *container.Node:
+			value, exists := typ.AttributeString(container.AttrNameBackground)
+			if !exists {
+				return ast.WalkContinue, nil
+			}
+
+			destination := directive.AttributeValueString(value)
+			if destination == "" {
+				return ast.WalkContinue, nil
+			}
+
+			dataURL, err := t.toDataURL(ctx, destination)
+			if err != nil {
+				return ast.WalkStop, errors.WithStack(err)
+			}
+
+			typ.SetAttributeString(container.AttrNameBackground, []byte(dataURL.String()))
 
 		default:
 			return ast.WalkContinue, nil

@@ -42,6 +42,28 @@ Hello
 `,
 	},
 	{
+		Name: "background",
+		Source: `:::section{bg="./cover.jpg" .hero}
+Hello
+:::
+`,
+		Expected: `<section class="amatl-section hero" style="--amatl-bg: url(&quot;./cover.jpg&quot;)">
+<p>Hello</p>
+</section>
+`,
+	},
+	{
+		Name: "background and style",
+		Source: `:::card{style="color: red;" title=x bg="a \"b\".png"}
+Hello
+:::
+`,
+		Expected: `<div class="amatl-card" style="color: red; --amatl-bg: url(&quot;a \&quot;b\&quot;.png&quot;)" title="x">
+<p>Hello</p>
+</div>
+`,
+	},
+	{
 		Name: "escaped attribute value",
 		Source: `:::card{title="Say \"hi\" \\o/"}
 Hello

@@ -123,9 +123,27 @@ The container becomes an element with the `amatl-<name>` class, plus the classes
 
 The `article`, `aside`, `figcaption`, `figure`, `footer`, `header`, `main`, `nav` and `section` containers use the HTML element of the same name. Any other name gives a `<div>`.
 
-Global HTML attributes such as `id`, `class`, `style`, `title` or `role` are copied as they are, and so are `data-*` and `aria-*` attributes. Any other attribute becomes a `data-*` attribute. For example, `:::columns{count=3}` gives `<div class="amatl-columns" data-count="3">`.
+Global HTML attributes such as `id`, `class`, `style`, `title` or `role` are copied as they are, and so are `data-*` and `aria-*` attributes. Any other attribute becomes a `data-*` attribute, except `bg` (see [Background image](#background-image)). For example, `:::columns{count=3}` gives `<div class="amatl-columns" data-count="3">`.
 
 An `:attrs{}` directive placed right before a container adds its attributes to the container.
+
+### Background image
+
+The `bg` attribute sets a background image on a container:
+
+```
+:::section{.hero bg="./cover.jpg"}
+# Our offer
+:::
+```
+
+Amatl resolves the path like an image path, so a relative path in an included file points next to that file. HTML and PDF output embed the image as a `data:` URL and pass it to CSS through the `--amatl-bg` custom property:
+
+```html
+<section class="amatl-section hero" style="--amatl-bg: url(&quot;data:image/jpeg;base64,...&quot;)">
+```
+
+`amatl://components.css` turns it into a centered background that covers the element. A custom layout can use `var(--amatl-bg)` in its own rules. Markdown output keeps the path. In an included file, amatl makes it absolute, as it does for images.
 
 ### Built-in styles
 

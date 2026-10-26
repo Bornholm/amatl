@@ -17,12 +17,60 @@ import (
 // the intermediate Markdown stage and integrate with other directives,
 // as the html and pdf commands chain them.
 func TestContainerDirectivePipeline(t *testing.T) {
-	sourcePath, err := resolver.Path("testdata/container/main.md").Abs()
+	html := renderContainerTestData(t, "testdata/container")
+
+	// The empty paragraph is left by the :attrs{} directive line,
+	// independently of containers
+	expected := `<h1 id="brochure">Brochure</h1>
+<p></p>
+<div class="amatl-columns highlight" data-count="2">
+<div class="amatl-card">
+<p>Included <strong>content</strong></p>
+</div>
+<div class="amatl-card">
+<p>Second</p>
+</div>
+</div>`
+
+	if e, g := expected, html; e != g {
+		t.Errorf("unexpected html:\n%s", diff.LineDiff(e, g))
+	}
+}
+
+// TestContainerBackgroundPipeline checks that the bg attribute is resolved
+// against the file declaring it, included files too, and embedded.
+func TestContainerBackgroundPipeline(t *testing.T) {
+	html := renderContainerTestData(t, "testdata/container-bg")
+
+	dataURL := `url(&quot;data:image/svg+xml;base64,`
+
+	expected := []string{
+		`<section class="amatl-section hero" style="--amatl-bg: ` + dataURL,
+		`<div class="amatl-card" style="color: red; --amatl-bg: ` + dataURL,
+	}
+
+	for _, e := range expected {
+		if !strings.Contains(html, e) {
+			t.Errorf("expected %q in html:\n%s", e, html)
+		}
+	}
+
+	if strings.Contains(html, "data-bg") {
+		t.Errorf("unexpected data-bg attribute in html:\n%s", html)
+	}
+}
+
+// renderContainerTestData renders the main.md file of the given directory
+// with its layout.html, as the html command does
+func renderContainerTestData(t *testing.T, dir string) string {
+	t.Helper()
+
+	sourcePath, err := resolver.Path(dir + "/main.md").Abs()
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
-	layoutPath, err := resolver.Path("testdata/container/layout.html").Abs()
+	layoutPath, err := resolver.Path(dir + "/layout.html").Abs()
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
@@ -58,20 +106,5 @@ func TestContainerDirectivePipeline(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	// The empty paragraph is left by the :attrs{} directive line,
-	// independently of containers
-	expected := `<h1 id="brochure">Brochure</h1>
-<p></p>
-<div class="amatl-columns highlight" data-count="2">
-<div class="amatl-card">
-<p>Included <strong>content</strong></p>
-</div>
-<div class="amatl-card">
-<p>Second</p>
-</div>
-</div>`
-
-	if e, g := expected, strings.TrimSpace(string(payload.GetData())); e != g {
-		t.Errorf("unexpected html:\n%s", diff.LineDiff(e, g))
-	}
+	return strings.TrimSpace(string(payload.GetData()))
 }
