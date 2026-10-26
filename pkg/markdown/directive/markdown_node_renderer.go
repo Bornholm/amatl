@@ -64,9 +64,7 @@ func marshalAttributes(attributes []ast.Attribute) string {
 		}
 		sb.Write(attr.Name)
 		sb.WriteString("=")
-		sb.WriteRune('"')
-		sb.WriteString(fmt.Sprintf("%v", attr.Value))
-		sb.WriteRune('"')
+		sb.WriteString(QuoteAttributeValue(AttributeValueString(attr.Value)))
 	}
 
 	return sb.String()

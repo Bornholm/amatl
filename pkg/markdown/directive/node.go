@@ -95,8 +95,7 @@ LOOP:
 	}
 
 	for _, attr := range attributes {
-		value := attr.Value.([]byte)
-		node.SetAttribute(attr.Name, string(value))
+		node.SetAttribute(attr.Name, AttributeValueString(attr.Value))
 	}
 
 	return node
