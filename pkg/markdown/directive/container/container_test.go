@@ -195,6 +195,42 @@ After
 `,
 	},
 	{
+		Name: "dedented fence closes the container matching its indentation",
+		Source: `:::outer
+- a
+
+  :::mid
+  - b
+
+    :::inner
+    One
+  :::
+  Two
+:::
+After
+`,
+		Expected: `<div class="amatl-outer">
+<ul>
+<li>
+<p>a</p>
+<div class="amatl-mid">
+<ul>
+<li>
+<p>b</p>
+<div class="amatl-inner">
+<p>One</p>
+</div>
+</li>
+</ul>
+</div>
+<p>Two</p>
+</li>
+</ul>
+</div>
+<p>After</p>
+`,
+	},
+	{
 		Name: "inside blockquote",
 		Source: `:::outer
 > :::inner
