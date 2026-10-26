@@ -1,7 +1,7 @@
 <html>
   <head>
     <title>
-      {{ default ( get .Vars "title" ) ( get .Meta "title" ) ( (htmlTextContent .Body "h1:first-of-type") ) }}
+      {{ default ( default ( htmlTextContent .Body "h1:first-of-type" ) ( get .Meta "title" ) ) ( get .Vars "title" ) }}
     </title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

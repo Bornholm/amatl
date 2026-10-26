@@ -44,20 +44,15 @@ func htmlRemove(rawHTML template.HTML, query string) (template.HTML, error) {
 	nodes := selector.MatchAll(root)
 
 	for _, n := range nodes {
-		var el bytes.Buffer
-		if err := html.Render(&el, n); err != nil {
-			return "", errors.WithStack(err)
-		}
-
 		n.Parent.RemoveChild(n)
 	}
 
-	var rest bytes.Buffer
-	if err := html.Render(&rest, root); err != nil {
+	rest, err := renderFragment(root)
+	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	return template.HTML(rest.String()), nil
+	return rest, nil
 }
 
 func htmlTextContent(rawHTML template.HTML, query string) (string, error) {
@@ -162,12 +157,12 @@ func htmlAddAttr(rawHTML template.HTML, query string, key string, value string) 
 
 	for _, n := range nodes {
 		found := false
-		for _, attr := range n.Attr {
-			if attr.Key != key {
+		for i := range n.Attr {
+			if n.Attr[i].Key != key {
 				continue
 			}
 
-			attr.Val += " " + value
+			n.Attr[i].Val += " " + value
 			found = true
 			break
 		}
@@ -180,12 +175,12 @@ func htmlAddAttr(rawHTML template.HTML, query string, key string, value string) 
 
 	}
 
-	var updated bytes.Buffer
-	if err := html.Render(&updated, root); err != nil {
+	updated, err := renderFragment(root)
+	if err != nil {
 		return "", errors.WithStack(err)
 	}
 
-	return template.HTML(updated.String()), nil
+	return updated, nil
 }
 
 func htmlSplit(rawHTML template.HTML, query string) ([]template.HTML, error) {
@@ -292,18 +287,43 @@ func getResolveFunc(res resolver.Resolver) func(ctx context.Context, rawURL stri
 	}
 }
 
+// walk calls fn on the given node and all its descendants, in document order
 func walk(n *html.Node, fn func(n *html.Node) error) error {
-	if n.FirstChild != nil {
-		if err := walk(n.FirstChild, fn); err != nil {
-			return errors.WithStack(err)
-		}
+	if err := fn(n); err != nil {
+		return errors.WithStack(err)
 	}
 
-	if n.NextSibling != nil {
-		if err := walk(n.NextSibling, fn); err != nil {
+	for child := n.FirstChild; child != nil; child = child.NextSibling {
+		if err := walk(child, fn); err != nil {
 			return errors.WithStack(err)
 		}
 	}
 
 	return nil
+}
+
+// renderFragment renders the content of a document parsed with html.Parse
+// without the <html>, <head> and <body> elements added by the parser.
+// Elements the parser moved to the <head> (i.e. a leading <style>) are kept.
+func renderFragment(root *html.Node) (template.HTML, error) {
+	var buf bytes.Buffer
+
+	err := walk(root, func(n *html.Node) error {
+		if n.Type != html.ElementNode || (n.Data != "head" && n.Data != "body") || n.Parent == nil || n.Parent.Data != "html" {
+			return nil
+		}
+
+		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			if err := html.Render(&buf, child); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+
+	return template.HTML(buf.String()), nil
 }
