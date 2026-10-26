@@ -1,0 +1,106 @@
+/*
+ * Default styles for amatl container directives (:::name ... :::).
+ *
+ * Every container is rendered with an "amatl-<name>" class. Unknown
+ * attributes are exposed as data-* attributes, i.e. :::columns{count=3}
+ * gives <div class="amatl-columns" data-count="3">.
+ *
+ * Styles can be tuned with the following custom properties:
+ *
+ *   --amatl-gap           spacing between columns and grid items
+ *   --amatl-grid-min      minimum width of a grid item
+ *   --amatl-radius        border radius of cards and callouts
+ *   --amatl-border-color  border color of cards
+ *   --amatl-card-bg       background of cards
+ *   --amatl-accent        accent color of callouts
+ *   --amatl-callout-bg    background of callouts
+ */
+
+:root {
+  --amatl-gap: 1.5rem;
+  --amatl-grid-min: 14rem;
+  --amatl-radius: 8px;
+  --amatl-border-color: #d0d7de;
+  --amatl-card-bg: transparent;
+  --amatl-accent: #0969da;
+  --amatl-callout-bg: rgba(9, 105, 218, 0.08);
+}
+
+[class^="amatl-"] > :first-child,
+[class*=" amatl-"] > :first-child {
+  margin-top: 0;
+}
+
+[class^="amatl-"] > :last-child,
+[class*=" amatl-"] > :last-child {
+  margin-bottom: 0;
+}
+
+.amatl-columns,
+.amatl-grid {
+  display: grid;
+  gap: var(--amatl-gap);
+  margin-bottom: 16px;
+}
+
+.amatl-columns {
+  --amatl-columns: 2;
+  grid-template-columns: repeat(var(--amatl-columns), minmax(0, 1fr));
+}
+
+.amatl-columns[data-count="1"] {
+  --amatl-columns: 1;
+}
+
+.amatl-columns[data-count="3"] {
+  --amatl-columns: 3;
+}
+
+.amatl-columns[data-count="4"] {
+  --amatl-columns: 4;
+}
+
+.amatl-columns[data-count="5"] {
+  --amatl-columns: 5;
+}
+
+.amatl-columns[data-count="6"] {
+  --amatl-columns: 6;
+}
+
+.amatl-grid {
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(var(--amatl-grid-min), 100%), 1fr)
+  );
+}
+
+.amatl-card {
+  padding: 1.25rem;
+  border: 1px solid var(--amatl-border-color);
+  border-radius: var(--amatl-radius);
+  background: var(--amatl-card-bg);
+  margin-bottom: 16px;
+  break-inside: avoid;
+}
+
+.amatl-callout {
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--amatl-accent);
+  border-radius: 0 var(--amatl-radius) var(--amatl-radius) 0;
+  background: var(--amatl-callout-bg);
+  margin-bottom: 16px;
+  break-inside: avoid;
+}
+
+/* Spacing between items is handled by the grid gap */
+.amatl-columns > *,
+.amatl-grid > * {
+  margin: 0;
+}
+
+@media screen and (max-width: 767px) {
+  .amatl-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

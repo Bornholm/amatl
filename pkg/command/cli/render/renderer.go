@@ -2,6 +2,7 @@ package render
 
 import (
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
+	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/include"
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/yuin/goldmark"
@@ -49,6 +50,10 @@ func newMarkdownRenderer() renderer.Renderer {
 			),
 		),
 		markdown.WithNodeRenderer(
+			container.Kind,
+			node.WithLineSpacingBefore(&container.MarkdownRenderer{}, 2),
+		),
+		markdown.WithNodeRenderer(
 			mermaid.Kind,
 			&mermaidRenderer.BlockNodeRenderer{},
 		),
@@ -65,6 +70,7 @@ func newHTMLRenderer() renderer.Renderer {
 	markdown := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
+			&container.Extension{},
 			highlighting.NewHighlighting(
 				highlighting.WithStyle("nord"),
 				highlighting.WithFormatOptions(
