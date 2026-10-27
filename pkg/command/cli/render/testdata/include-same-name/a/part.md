@@ -1,3 +1,3 @@
 Part of a
 
-![a](./img.png)
+![a](./img.svg)
