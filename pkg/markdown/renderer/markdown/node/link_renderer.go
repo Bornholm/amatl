@@ -23,7 +23,7 @@ func (*LinkRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (a
 		return ast.WalkContinue, nil
 	}
 
-	_, _ = fmt.Fprintf(r.Writer(), "](%s", link.Destination)
+	_, _ = fmt.Fprintf(r.Writer(), "](%s", formatDestination(link.Destination))
 	if len(link.Title) > 0 {
 		_, _ = fmt.Fprintf(r.Writer(), ` "%s"`, link.Title)
 	}

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mddestination "github.com/Bornholm/amatl/pkg/markdown/destination"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/pkg/errors"
@@ -40,8 +41,8 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 				return ast.WalkContinue, nil
 			}
 
-			if !filepath.IsAbs(destination) {
-				destination = workdir.JoinPath(destination).String()
+			if path := mddestination.Decode(destination); !filepath.IsAbs(path) {
+				destination = mddestination.Encode(workdir.JoinPath(path).String())
 			}
 
 			for prefix, replacement := range t.replacements {

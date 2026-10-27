@@ -1,6 +1,7 @@
 package node
 
 import (
+	"bytes"
 	"io"
 	"strconv"
 	"unsafe"
@@ -74,4 +75,40 @@ func writeClean(w io.Writer, bs []byte) error {
 
 	_, err := w.Write(bs[startIdx:])
 	return err
+}
+
+// formatDestination returns the destination of a link or an image as it must
+// be written between parentheses. A destination holding a space, a line
+// break, a '<' or unbalanced parentheses is only valid between angle
+// brackets, where '<' and '>' must be escaped.
+func formatDestination(destination []byte) []byte {
+	if !needsAngleBrackets(destination) {
+		return destination
+	}
+
+	escaped := bytes.ReplaceAll(destination, []byte("<"), []byte(`\<`))
+	escaped = bytes.ReplaceAll(escaped, []byte(">"), []byte(`\>`))
+
+	return append(append([]byte{'<'}, escaped...), '>')
+}
+
+func needsAngleBrackets(destination []byte) bool {
+	depth := 0
+
+	for i := 0; i < len(destination); i++ {
+		switch c := destination[i]; {
+		case c == '\\':
+			i++ // skip the escaped character
+		case c <= ' ' || c == '<':
+			return true
+		case c == '(':
+			depth++
+		case c == ')':
+			if depth--; depth < 0 {
+				return true
+			}
+		}
+	}
+
+	return depth != 0
 }

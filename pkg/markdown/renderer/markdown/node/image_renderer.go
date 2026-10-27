@@ -23,7 +23,7 @@ func (*ImageRenderer) Render(r *markdown.Render, node ast.Node, entering bool) (
 		return ast.WalkContinue, nil
 	}
 
-	_, _ = fmt.Fprintf(r.Writer(), "](%s", image.Destination)
+	_, _ = fmt.Fprintf(r.Writer(), "](%s", formatDestination(image.Destination))
 	if len(image.Title) > 0 {
 		_, _ = fmt.Fprintf(r.Writer(), ` "%s"`, image.Title)
 	}

@@ -34,6 +34,13 @@ An included file can include other files in turn. If a file ends up including it
 
 The URL of the Markdown document to include. This can be a local file or a remote document's URL (see ["URL resolving"](../url-resolving/README.md)).
 
+Relative links and images in the included document point next to that document, at every level of inclusion. Write a path with spaces either percent-encoded or between angle brackets, as in CommonMark:
+
+```
+![Cover](./my%20image.png)
+![Cover](<./my image.png>)
+```
+
 #### `select="<selector>"`
 
 - **Optional**
