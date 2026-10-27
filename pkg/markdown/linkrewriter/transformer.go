@@ -42,16 +42,28 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 			}
 
 			if path := mddestination.Decode(destination); !filepath.IsAbs(path) {
-				destination = mddestination.Encode(workdir.JoinPath(path).String())
+				destination = mddestination.Join(workdir, path)
 			}
 
+			// Replacement prefixes are written by hand, so they are compared
+			// with the decoded location first, then with the destination
+			location := mddestination.Location(destination)
+
 			for prefix, replacement := range t.replacements {
-				if strings.HasPrefix(destination, prefix) {
-					updated := replacement + strings.TrimPrefix(destination, prefix)
-					slog.DebugContext(ctx, "rewriting link", slog.String("original", destination), slog.String("updated", updated))
-					destination = updated
-					break
+				var updated string
+
+				switch {
+				case strings.HasPrefix(location, prefix):
+					updated = replacement + mddestination.Encode(strings.TrimPrefix(location, prefix))
+				case strings.HasPrefix(destination, prefix):
+					updated = replacement + strings.TrimPrefix(destination, prefix)
+				default:
+					continue
 				}
+
+				slog.DebugContext(ctx, "rewriting link", slog.String("original", destination), slog.String("updated", updated))
+				destination = updated
+				break
 			}
 
 			typ.Destination = []byte(destination)

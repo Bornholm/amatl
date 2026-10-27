@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/yuin/goldmark/util"
 )
 
@@ -51,4 +52,30 @@ var encoder = strings.NewReplacer(
 // separators, that Decode turns back into the same path.
 func Encode(path string) string {
 	return encoder.Replace(filepath.ToSlash(path))
+}
+
+// Join returns a destination pointing to the given decoded relative path,
+// resolved against dir. When dir is a URL, the result of its JoinPath is
+// already percent-encoded and is returned as is.
+func Join(dir resolver.Path, path string) string {
+	joined := dir.JoinPath(path)
+
+	if dir.IsURL() {
+		return joined.String()
+	}
+
+	return Encode(joined.String())
+}
+
+// Location returns the given destination with its escapes and its percent
+// encoding removed, URL or not, to compare it with a location written by
+// hand
+func Location(raw string) string {
+	decoded := string(util.UnescapePunctuations([]byte(raw)))
+
+	if unescaped, err := url.PathUnescape(decoded); err == nil {
+		return unescaped
+	}
+
+	return decoded
 }
