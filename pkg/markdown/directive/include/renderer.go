@@ -10,20 +10,14 @@ import (
 )
 
 type NodeRenderer struct {
-	Cache    *SourceCache
 	Renderer renderer.Renderer
 }
 
 // Render implements directive.NodeRenderer.
 func (r *NodeRenderer) Render(writer util.BufWriter, source []byte, node *directive.Node) {
-	rawURL, err := getNodeURLAttribute(node)
+	includedSource, includedNode, err := includedContent(node)
 	if err != nil {
 		panic(errors.WithStack(err))
-	}
-
-	includedSource, includedNode, exists := r.Cache.Get(rawURL)
-	if !exists {
-		panic(errors.Errorf("could not find source associated with path '%s'", rawURL))
 	}
 
 	var buff bytes.Buffer

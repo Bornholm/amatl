@@ -1,6 +1,7 @@
 package include
 
 import (
+	"github.com/pkg/errors"
 	"github.com/yuin/goldmark/ast"
 )
 
@@ -43,4 +44,18 @@ func IncludedSource(n ast.Node) ([]byte, bool) {
 	}
 
 	return includedSource, true
+}
+
+// includedContent returns the source and the node the include transformer
+// attached to the given directive node
+func includedContent(n ast.Node) ([]byte, ast.Node, error) {
+	includedSource, sourceExists := IncludedSource(n)
+	includedNode, nodeExists := IncludedNode(n)
+
+	if !sourceExists || !nodeExists {
+		rawURL, _ := getNodeURLAttribute(n)
+		return nil, nil, errors.Errorf("could not find source associated with path '%s'", rawURL)
+	}
+
+	return includedSource, includedNode, nil
 }

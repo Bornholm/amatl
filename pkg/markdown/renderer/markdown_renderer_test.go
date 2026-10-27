@@ -56,8 +56,6 @@ func TestMarkdonwRenderer(t *testing.T) {
 
 			root := parser.Parse(reader)
 
-			cache := include.NewSourceCache()
-
 			markdownRenderer := markdown.NewRenderer()
 			markdownRenderer.AddOptions(
 				markdown.WithNodeRenderers(node.Renderers()),
@@ -67,7 +65,6 @@ func TestMarkdonwRenderer(t *testing.T) {
 							directive.WithRenderer(
 								include.Type,
 								&include.NodeRenderer{
-									Cache:    cache,
 									Renderer: markdownRenderer,
 								},
 							),
@@ -80,9 +77,7 @@ func TestMarkdonwRenderer(t *testing.T) {
 					directive.NewMarkdownNodeRenderer(
 						directive.WithMarkdownDirectiveRenderer(
 							include.Type,
-							&include.MarkdownRenderer{
-								Cache: cache,
-							},
+							&include.MarkdownRenderer{},
 						),
 					),
 				),

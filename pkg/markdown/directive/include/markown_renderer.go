@@ -10,19 +10,13 @@ import (
 )
 
 type MarkdownRenderer struct {
-	Cache *SourceCache
 }
 
 // Render implements markdown.NodeRenderer.
 func (mr *MarkdownRenderer) Render(r *markdown.Render, directive *directive.Node, entering bool) (ast.WalkStatus, error) {
-	rawURL, err := getNodeURLAttribute(directive)
+	includedSource, includedNode, err := includedContent(directive)
 	if err != nil {
 		return ast.WalkStop, errors.WithStack(err)
-	}
-
-	includedSource, includedNode, exists := mr.Cache.Get(rawURL)
-	if !exists {
-		return ast.WalkStop, errors.Errorf("could not find source associated with path '%s'", rawURL)
 	}
 
 	var buff bytes.Buffer
