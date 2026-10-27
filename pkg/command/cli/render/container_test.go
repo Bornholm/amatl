@@ -11,6 +11,7 @@ import (
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
 	"github.com/andreyvit/diff"
+	"github.com/pkg/errors"
 )
 
 // TestContainerDirectivePipeline checks that container directives survive
@@ -60,9 +61,33 @@ func TestContainerBackgroundPipeline(t *testing.T) {
 	}
 }
 
+// TestContainerBackgroundMissing checks that a bg pointing to a missing
+// file fails the render with an error instead of a panic
+func TestContainerBackgroundMissing(t *testing.T) {
+	_, err := transformContainerTestData(t, "testdata/container-bg-missing")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+
+	if !strings.Contains(err.Error(), "could not resolve resource './missing.png'") {
+		t.Errorf("unexpected error: %+v", err)
+	}
+}
+
 // renderContainerTestData renders the main.md file of the given directory
 // with its layout.html, as the html command does
 func renderContainerTestData(t *testing.T, dir string) string {
+	t.Helper()
+
+	html, err := transformContainerTestData(t, dir)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
+
+	return html
+}
+
+func transformContainerTestData(t *testing.T, dir string) (string, error) {
 	t.Helper()
 
 	sourcePath, err := resolver.Path(dir + "/main.md").Abs()
@@ -103,8 +128,8 @@ func renderContainerTestData(t *testing.T, dir string) string {
 	payload := pipeline.NewPayload(source)
 
 	if err := transformer.Transform(ctx, payload); err != nil {
-		t.Fatalf("%+v", err)
+		return "", errors.WithStack(err)
 	}
 
-	return strings.TrimSpace(string(payload.GetData()))
+	return strings.TrimSpace(string(payload.GetData())), nil
 }

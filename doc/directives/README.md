@@ -137,7 +137,7 @@ The `bg` attribute sets a background image on a container:
 :::
 ```
 
-Amatl resolves the path like an image path, so a relative path in an included file points next to that file. HTML and PDF output embed the image as a `data:` URL and pass it to CSS through the `--amatl-bg` custom property:
+Amatl resolves the path like an image path, so a relative path in an included file points next to that file. If the file does not exist, the render stops with an error. HTML and PDF output embed the image as a `data:` URL and pass it to CSS through the `--amatl-bg` custom property:
 
 ```html
 <section class="amatl-section hero" style="--amatl-bg: url(&quot;data:image/jpeg;base64,...&quot;)">

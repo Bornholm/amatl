@@ -16,6 +16,7 @@ import (
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 	"github.com/pkg/errors"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
 )
@@ -23,6 +24,25 @@ import (
 const (
 	attrMeta = "meta"
 )
+
+// parseDocument parses the markdown source. goldmark AST transformers cannot
+// return an error, so the directive and resource transformers panic with
+// one, for example when a linked resource cannot be resolved: parseDocument
+// returns it instead.
+func parseDocument(parse parser.Parser, reader text.Reader, pc parser.Context) (document ast.Node, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			recovered, ok := r.(error)
+			if !ok {
+				panic(r)
+			}
+
+			err = recovered
+		}
+	}()
+
+	return parse.Parse(reader, parser.WithContext(pc)), nil
+}
 
 type TemplateTransformerOptions struct {
 	Vars           map[string]any
@@ -167,7 +187,10 @@ func MarkdownMiddleware(funcs ...MarkdownTransformerOptionFunc) pipeline.Middlew
 			pc := parser.NewContext()
 			pc = pipeline.WithContext(ctx, pc)
 
-			document := parse.Parse(reader, parser.WithContext(pc))
+			document, err := parseDocument(parse, reader, pc)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			var doc bytes.Buffer
 
@@ -248,7 +271,10 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			slog.DebugContext(ctx, "parsing markdown file")
 
-			document := parse.Parse(reader, parser.WithContext(pc))
+			document, err := parseDocument(parse, reader, pc)
+			if err != nil {
+				return errors.WithStack(err)
+			}
 
 			meta, ok := pipeline.GetAttribute[map[string]any](payload, attrMeta)
 			if !ok {
@@ -267,7 +293,7 @@ func HTMLMiddleware(funcs ...HTMLTransformerOptionFunc) pipeline.Middleware {
 
 			slog.DebugContext(ctx, "rendering html layout", slog.String("layout", opts.LayoutURL))
 
-			err := layout.Render(
+			err = layout.Render(
 				ctx, &doc, body.Bytes(),
 				layout.WithURL(opts.LayoutURL),
 				layout.WithVars(opts.LayoutVars),
