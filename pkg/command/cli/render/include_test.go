@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -87,7 +88,22 @@ func TestIncludeCycle(t *testing.T) {
 		t.Fatal("expected an error")
 	}
 
-	if !strings.Contains(err.Error(), "include cycle:") || !strings.Contains(err.Error(), "b.md -> ") {
+	expected := regexp.MustCompile(`include cycle: \S*main\.md -> \S*a\.md -> \S*b\.md -> \S*a\.md`)
+	if !expected.MatchString(err.Error()) {
+		t.Errorf("unexpected error: %+v", err)
+	}
+}
+
+// TestIncludeSelf checks that a document including itself fails with an
+// error naming it twice
+func TestIncludeSelf(t *testing.T) {
+	_, err := transformContainerTestData(t, "testdata/include-self")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+
+	expected := regexp.MustCompile(`include cycle: \S*main\.md -> \S*main\.md`)
+	if !expected.MatchString(err.Error()) {
 		t.Errorf("unexpected error: %+v", err)
 	}
 }
