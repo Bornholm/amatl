@@ -54,7 +54,12 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 
 				switch {
 				case strings.HasPrefix(location, prefix):
-					updated = replacement + mddestination.Encode(strings.TrimPrefix(location, prefix))
+					suffix := strings.TrimPrefix(location, prefix)
+					if strings.Contains(replacement, "://") {
+						updated = replacement + mddestination.EncodeURLPath(suffix)
+					} else {
+						updated = replacement + mddestination.Encode(suffix)
+					}
 				case strings.HasPrefix(destination, prefix):
 					updated = replacement + strings.TrimPrefix(destination, prefix)
 				default:

@@ -35,9 +35,9 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 
 		switch typ := n.(type) {
 		case *ast.Image:
-			destination := string(typ.Destination)
-
-			dataURL, err := t.toDataURL(ctx, destination)
+			// An image destination keeps its escapes and percent encoding,
+			// unlike the bg attribute value below
+			dataURL, err := t.toDataURL(ctx, destination.Decode(string(typ.Destination)))
 			if err != nil {
 				return ast.WalkStop, errors.WithStack(err)
 			}
@@ -50,12 +50,12 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 				return ast.WalkContinue, nil
 			}
 
-			destination := directive.AttributeValueString(value)
-			if destination == "" {
+			bg := directive.AttributeValueString(value)
+			if bg == "" {
 				return ast.WalkContinue, nil
 			}
 
-			dataURL, err := t.toDataURL(ctx, destination)
+			dataURL, err := t.toDataURL(ctx, bg)
 			if err != nil {
 				return ast.WalkStop, errors.WithStack(err)
 			}
@@ -73,8 +73,7 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 	}
 }
 
-func (t *Transformer) toDataURL(ctx context.Context, raw string) (*dataurl.DataURL, error) {
-	destination := destination.Decode(raw)
+func (t *Transformer) toDataURL(ctx context.Context, destination string) (*dataurl.DataURL, error) {
 	resourcePath := resolver.Path(destination)
 
 	resourceReader, err := resolver.Resolve(ctx, destination)
