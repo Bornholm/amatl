@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Bornholm/amatl/pkg/markdown/destination"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
 	"github.com/Bornholm/amatl/pkg/pipeline"
@@ -72,7 +73,8 @@ func (t *Transformer) Transform(node *ast.Document, reader text.Reader, pc parse
 	}
 }
 
-func (t *Transformer) toDataURL(ctx context.Context, destination string) (*dataurl.DataURL, error) {
+func (t *Transformer) toDataURL(ctx context.Context, raw string) (*dataurl.DataURL, error) {
+	destination := destination.Decode(raw)
 	resourcePath := resolver.Path(destination)
 
 	resourceReader, err := resolver.Resolve(ctx, destination)

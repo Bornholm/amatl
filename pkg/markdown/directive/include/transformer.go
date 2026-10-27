@@ -9,6 +9,7 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
+	"github.com/Bornholm/amatl/pkg/markdown/destination"
 	"github.com/Bornholm/amatl/pkg/markdown/selector"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -187,29 +188,9 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, basePath resolver.
 
 		switch n := node.(type) {
 		case *ast.Link:
-			destination := string(n.Destination)
-
-			if isURL(destination) {
-				return ast.WalkContinue, nil
-			}
-
-			if !filepath.IsAbs(destination) {
-				destination = dirPath.JoinPath(destination).String()
-			}
-
-			n.Destination = []byte(destination)
+			n.Destination = rewriteDestination(dirPath, n.Destination)
 		case *ast.Image:
-			destination := string(n.Destination)
-
-			if isURL(destination) {
-				return ast.WalkContinue, nil
-			}
-
-			if !filepath.IsAbs(destination) {
-				destination = dirPath.JoinPath(destination).String()
-			}
-
-			n.Destination = []byte(destination)
+			n.Destination = rewriteDestination(dirPath, n.Destination)
 		case *container.Node:
 			value, exists := n.AttributeString(container.AttrNameBackground)
 			if !exists {
@@ -234,6 +215,21 @@ func (t *NodeTransformer) rewriteRelativeLinks(root ast.Node, basePath resolver.
 	}
 
 	return nil
+}
+
+// rewriteDestination returns the given link or image destination, made
+// absolute against the given directory when it is a relative path
+func rewriteDestination(dirPath resolver.Path, raw []byte) []byte {
+	if isURL(string(raw)) {
+		return raw
+	}
+
+	path := destination.Decode(string(raw))
+	if filepath.IsAbs(path) {
+		return raw
+	}
+
+	return []byte(destination.Encode(dirPath.JoinPath(path).String()))
 }
 
 var _ directive.NodeTransformer = &NodeTransformer{}
