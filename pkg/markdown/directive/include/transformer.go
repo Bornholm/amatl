@@ -20,7 +20,6 @@ import (
 )
 
 type NodeTransformer struct {
-	Cache      *SourceCache
 	Parser     parser.Parser
 	SourcePath resolver.Path
 }
@@ -29,7 +28,7 @@ type NodeTransformer struct {
 func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc parser.Context) error {
 	sourcePath := getSourcePath(pc, t.SourcePath)
 
-	resourcePath, rawURL, err := parseNodeURLAttribute(sourcePath, node)
+	resourcePath, _, err := parseNodeURLAttribute(sourcePath, node)
 	if err != nil {
 		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
 	}
@@ -42,10 +41,6 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	fromHeadings, err := getNodeFromHeadingsAttribute(node)
 	if err != nil {
 		fromHeadings = 0
-	}
-
-	if _, _, exists := t.Cache.Get(resourcePath.String()); exists {
-		return nil
 	}
 
 	ctx, err := pipeline.FromParserContext(pc)
@@ -110,8 +105,6 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	}
 
 	setIncludedNode(node, includedNode)
-
-	t.Cache.Set(rawURL, includedSource, includedNode)
 
 	parent := node.Parent()
 	if parent != nil && parent.Kind() == ast.KindParagraph {

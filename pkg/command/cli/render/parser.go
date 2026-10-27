@@ -19,10 +19,6 @@ import (
 	"go.abhg.dev/goldmark/mermaid"
 )
 
-var (
-	cache = include.NewSourceCache()
-)
-
 type ParserOptions struct {
 	EmbedLinkedResources bool
 	LinkReplacements     map[string]string
@@ -71,7 +67,6 @@ func newParser(sourcePath resolver.Path, opts ParserOptions) parser.Parser {
 				include.Type,
 				&include.NodeTransformer{
 					SourcePath: sourcePath,
-					Cache:      cache,
 					Parser:     parse,
 				},
 			),

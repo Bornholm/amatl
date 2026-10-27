@@ -30,7 +30,6 @@ func newMarkdownRenderer() renderer.Renderer {
 					directive.WithRenderer(
 						include.Type,
 						&include.NodeRenderer{
-							Cache:    cache,
 							Renderer: render,
 						},
 					),
@@ -43,9 +42,7 @@ func newMarkdownRenderer() renderer.Renderer {
 			directive.NewMarkdownNodeRenderer(
 				directive.WithMarkdownDirectiveRenderer(
 					include.Type,
-					&include.MarkdownRenderer{
-						Cache: cache,
-					},
+					&include.MarkdownRenderer{},
 				),
 			),
 		),
