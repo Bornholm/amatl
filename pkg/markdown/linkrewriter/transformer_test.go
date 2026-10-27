@@ -57,6 +57,13 @@ func TestTransformer(t *testing.T) {
 			Expected:     "https://example.com/blob/v1/guide.md",
 		},
 		{
+			Name:         "URL suffix with reserved characters",
+			WorkDir:      "/home/me/docs",
+			Replacements: map[string]string{"/home/me/docs": "https://example.com/blob/v1"},
+			Source:       "[a](./a%23b%3F%C3%A9.md)",
+			Expected:     "https://example.com/blob/v1/a%23b%3F%C3%A9.md",
+		},
+		{
 			Name:     "absolute URL",
 			WorkDir:  "/home/me/docs",
 			Source:   "[a](https://example.com/a%20b)",

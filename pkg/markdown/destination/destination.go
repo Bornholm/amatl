@@ -67,6 +67,12 @@ func Join(dir resolver.Path, path string) string {
 	return Encode(joined.String())
 }
 
+// EncodeURLPath percent-encodes the given decoded URL path, '#', '?' and
+// non-ASCII characters included, as url.URL.JoinPath does
+func EncodeURLPath(path string) string {
+	return (&url.URL{Path: path}).EscapedPath()
+}
+
 // Location returns the given destination with its escapes and its percent
 // encoding removed, URL or not, to compare it with a location written by
 // hand

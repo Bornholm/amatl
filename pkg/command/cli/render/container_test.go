@@ -48,6 +48,8 @@ func TestContainerBackgroundPipeline(t *testing.T) {
 	expected := []string{
 		`<section class="amatl-section hero" style="--amatl-bg: ` + dataURL,
 		`<div class="amatl-card" style="color: red; --amatl-bg: ` + dataURL,
+		// The bg value is not a markdown destination: '%' is a literal
+		`<aside class="amatl-aside" style="--amatl-bg: ` + dataURL,
 	}
 
 	for _, e := range expected {
