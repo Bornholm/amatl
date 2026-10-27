@@ -457,6 +457,10 @@ func PDFMiddleware(funcs ...PDFTransformerOptionFunc) pipeline.Middleware {
 
 			allocatorOptions := chromedp.DefaultExecAllocatorOptions[:]
 
+			// chromedp waits 20 seconds by default for Chrome to start, which a
+			// cold start on a CI runner can exceed: wait as long as the render
+			allocatorOptions = append(allocatorOptions, chromedp.WSURLReadTimeout(opts.Timeout))
+
 			if opts.NoSandbox {
 				allocatorOptions = append(allocatorOptions, chromedp.NoSandbox)
 			}
