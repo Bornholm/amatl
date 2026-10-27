@@ -3,6 +3,7 @@ package render
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -42,7 +43,12 @@ func TestIncludeSameRelativeURL(t *testing.T) {
 		t.Fatalf("%+v", err)
 	}
 
-	markdown := strings.ReplaceAll(string(payload.GetData()), baseDir.String(), "<dir>")
+	// Included paths use the separator of the platform
+	markdown := strings.ReplaceAll(
+		filepath.ToSlash(string(payload.GetData())),
+		filepath.ToSlash(baseDir.String()),
+		"<dir>",
+	)
 
 	for _, expected := range []string{
 		"## Doc a\n\nPart of a\n\n![a](<dir>/a/img.png)",
