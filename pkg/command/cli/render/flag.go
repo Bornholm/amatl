@@ -116,7 +116,7 @@ var (
 	flagPDFTimeout = altsrc.NewDurationFlag(&cli.DurationFlag{
 		Name:  paramPDFTimeout,
 		Value: DefaultPDFTimeout,
-		Usage: "pdf generation timeout",
+		Usage: "pdf generation timeout, Chrome startup included",
 	})
 	flagPDFBackground = altsrc.NewBoolFlag(&cli.BoolFlag{
 		Name:  paramPDFBackground,
