@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"log/slog"
+	"runtime"
 	"sync"
 	"text/template"
 	"time"
@@ -28,12 +29,16 @@ const (
 // parseDocument parses the markdown source. goldmark AST transformers cannot
 // return an error, so the directive and resource transformers panic with
 // one, for example when a linked resource cannot be resolved: parseDocument
-// returns it instead.
+// returns it instead. Runtime errors, which are bugs, still panic.
 func parseDocument(parse parser.Parser, reader text.Reader, pc parser.Context) (document ast.Node, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			recovered, ok := r.(error)
 			if !ok {
+				panic(r)
+			}
+
+			if _, isRuntime := recovered.(runtime.Error); isRuntime {
 				panic(r)
 			}
 
