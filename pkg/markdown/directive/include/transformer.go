@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,11 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	resourcePath, _, err := parseNodeURLAttribute(sourcePath, node)
 	if err != nil {
 		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
+	}
+
+	chain := getIncludeChain(pc, sourcePath)
+	if slices.Contains(chain, includeChainKey(resourcePath)) {
+		return errors.Errorf("include cycle: %s -> %s", strings.Join(chain, " -> "), includeChainKey(resourcePath))
 	}
 
 	shiftHeadings, err := getNodeShiftHeadingsAttribute(node)
@@ -79,6 +85,7 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 	includePC := pipeline.WithContext(includeCtx, parser.NewContext())
 
 	setSourcePath(includePC, resourcePath)
+	setIncludeChain(includePC, append(slices.Clone(chain), includeChainKey(resourcePath)))
 
 	includedNode := t.Parser.Parse(includedReader, parser.WithContext(includePC))
 
@@ -306,6 +313,33 @@ func parseNodeURLAttribute(basePath resolver.Path, node ast.Node) (resolver.Path
 }
 
 var contextKeySourcePath = parser.NewContextKey()
+
+var contextKeyIncludeChain = parser.NewContextKey()
+
+// getIncludeChain returns the documents being included, from the root
+// document to the one holding the directive
+func getIncludeChain(ctx parser.Context, sourcePath resolver.Path) []string {
+	chain, ok := ctx.Get(contextKeyIncludeChain).([]string)
+	if !ok || len(chain) == 0 {
+		return []string{includeChainKey(sourcePath)}
+	}
+
+	return chain
+}
+
+func setIncludeChain(ctx parser.Context, chain []string) {
+	ctx.Set(contextKeyIncludeChain, chain)
+}
+
+// includeChainKey returns the absolute form of the path, so that the same
+// document reached through different relative paths is recognized
+func includeChainKey(path resolver.Path) string {
+	if abs, err := path.Abs(); err == nil {
+		return abs.String()
+	}
+
+	return path.String()
+}
 
 func getSourcePath(ctx parser.Context, defaultSourcePath resolver.Path) resolver.Path {
 	sourcePath, ok := ctx.Get(contextKeySourcePath).(resolver.Path)

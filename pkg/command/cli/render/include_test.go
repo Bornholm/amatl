@@ -2,6 +2,7 @@ package render
 
 import (
 	"context"
+	"encoding/base64"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,11 +52,42 @@ func TestIncludeSameRelativeURL(t *testing.T) {
 	)
 
 	for _, expected := range []string{
-		"## Doc a\n\nPart of a\n\n![a](<dir>/a/img.png)",
-		"## Doc c\n\nPart of c\n\n![c](<dir>/c/img.png)",
+		"## Doc a\n\nPart of a\n\n![a](<dir>/a/img.svg)",
+		"## Doc c\n\nPart of c\n\n![c](<dir>/c/img.svg)",
 	} {
 		if !strings.Contains(markdown, expected) {
 			t.Errorf("expected %q in markdown:\n%s", expected, diff.LineDiff(expected, markdown))
 		}
+	}
+}
+
+// TestIncludeSameRelativeURLHTML checks the same case through the HTML stage,
+// where each image must be embedded from its own directory
+func TestIncludeSameRelativeURLHTML(t *testing.T) {
+	html := renderContainerTestData(t, "testdata/include-same-name")
+
+	for _, dir := range []string{"a", "c"} {
+		data, err := os.ReadFile(filepath.Join("testdata/include-same-name", dir, "img.svg"))
+		if err != nil {
+			t.Fatalf("%+v", err)
+		}
+
+		expected := `src="data:image/svg+xml;base64,` + base64.StdEncoding.EncodeToString(data) + `" alt="` + dir + `"`
+		if !strings.Contains(html, expected) {
+			t.Errorf("expected the image of '%s' in html:\n%s", dir, html)
+		}
+	}
+}
+
+// TestIncludeCycle checks that a document including itself through another
+// one fails with an error instead of recursing until the stack overflows
+func TestIncludeCycle(t *testing.T) {
+	_, err := transformContainerTestData(t, "testdata/include-cycle")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+
+	if !strings.Contains(err.Error(), "include cycle:") || !strings.Contains(err.Error(), "b.md -> ") {
+		t.Errorf("unexpected error: %+v", err)
 	}
 }
