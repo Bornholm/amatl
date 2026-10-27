@@ -40,7 +40,12 @@
   margin-bottom: 0;
 }
 
-[style*="--amatl-bg"] {
+/*
+ * The class selector raises the specificity above the .amatl-card and
+ * .amatl-callout rules, whose background shorthand resets the image.
+ */
+[class^="amatl-"][style*="--amatl-bg:"],
+[class*=" amatl-"][style*="--amatl-bg:"] {
   background-image: var(--amatl-bg);
   background-position: center;
   background-size: cover;
