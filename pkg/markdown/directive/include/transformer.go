@@ -34,8 +34,10 @@ func (t *NodeTransformer) Transform(node *directive.Node, reader text.Reader, pc
 		return errors.Wrapf(err, "could not parse required attribute on directive '%s'", node.DirectiveType())
 	}
 
+	// The depth limit catches the cycles the chain cannot see, through a
+	// symbolic link or another spelling of the same path
 	chain := getIncludeChain(pc, sourcePath)
-	if slices.Contains(chain, includeChainKey(resourcePath)) {
+	if slices.Contains(chain, includeChainKey(resourcePath)) || len(chain) > maxIncludeDepth {
 		return errors.Errorf("include cycle: %s -> %s", strings.Join(chain, " -> "), includeChainKey(resourcePath))
 	}
 
@@ -315,6 +317,9 @@ func parseNodeURLAttribute(basePath resolver.Path, node ast.Node) (resolver.Path
 var contextKeySourcePath = parser.NewContextKey()
 
 var contextKeyIncludeChain = parser.NewContextKey()
+
+// maxIncludeDepth is the maximum number of nested includes
+const maxIncludeDepth = 32
 
 // getIncludeChain returns the documents being included, from the root
 // document to the one holding the directive

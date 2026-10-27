@@ -24,7 +24,7 @@ Each directive triggers a specific behavior based on its type.
 
 Include another Markdown file in your document.
 
-An included file can include other files in turn. If a file ends up including itself, directly or through other files, the render stops with an error that lists the chain of files.
+An included file can include other files in turn. If a file ends up including itself, directly or through other files, the render stops with an error that lists the chain of files. The render also stops past 32 levels of inclusion, which catches a cycle through a symbolic link.
 
 ### Parameters
 
