@@ -111,26 +111,100 @@ func TestUpdateSectionWithContainer(t *testing.T) {
 	}
 }
 
-func TestUpdateSectionEndingWithList(t *testing.T) {
-	srv := newTestServer(t, "doc.md", "## First\n\n- one\n- two\n\n## Second\n\nText.\n")
+func TestUpdateSectionEnding(t *testing.T) {
+	type testCase struct {
+		Name     string
+		Source   string
+		Selector string
+		Content  string
+		Expected string
+	}
 
-	_, _, err := srv.handleUpdateSection(context.Background(), nil, updateInput{
-		File:     "doc.md",
-		Selector: "h2#first",
-		Content:  "## First\n\nReplaced.\n",
-	})
+	testCases := []testCase{
+		{
+			Name:     "list",
+			Source:   "## First\n\n- one\n- two\n\n## Second\n\nText.\n",
+			Expected: "## First\n\nReplaced.\n\n## Second\n\nText.\n",
+		},
+		{
+			Name:     "fenced code block",
+			Source:   "## First\n\n```go\nx := 1\n```\n\n## Second\n\nText.\n",
+			Expected: "## First\n\nReplaced.\n\n## Second\n\nText.\n",
+		},
+		{
+			Name:     "thematic break",
+			Source:   "## First\n\nText\n\n---\n\n## Second\n\nText.\n",
+			Expected: "## First\n\nReplaced.\n\n## Second\n\nText.\n",
+		},
+		{
+			Name:     "table",
+			Source:   "## First\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n## Second\n\nText.\n",
+			Expected: "## First\n\nReplaced.\n\n## Second\n\nText.\n",
+		},
+		{
+			Name:     "setext heading",
+			Source:   "First\n-----\n\n## Second\n\nText.\n",
+			Expected: "## First\n\nReplaced.\n\n## Second\n\nText.\n",
+		},
+		{
+			Name:     "unclosed empty container",
+			Source:   "## Second\n\nText.\n\n## First\n\n:::card\n",
+			Expected: "## Second\n\nText.\n\n## First\n\nReplaced.\n",
+		},
+		{
+			Name:     "front matter",
+			Source:   "---\ntitle: Doc\n---\n\n## First\n\nText\n",
+			Expected: "---\ntitle: Doc\n---\n\n## First\n\nReplaced.\n",
+		},
+		{
+			Name:     "code block selector",
+			Source:   "## First\n\n```go\nx := 1\n```\n\nAfter.\n",
+			Selector: `code[lang="go"]`,
+			Content:  "```go\ny := 2\n```\n",
+			Expected: "## First\n\n```go\ny := 2\n```\n\nAfter.\n",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			srv := newTestServer(t, "doc.md", tc.Source)
+
+			selector, content := tc.Selector, tc.Content
+			if selector == "" {
+				selector, content = "h2#first", "## First\n\nReplaced.\n"
+			}
+
+			_, _, err := srv.handleUpdateSection(context.Background(), nil, updateInput{
+				File:     "doc.md",
+				Selector: selector,
+				Content:  content,
+			})
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+
+			data, err := srv.root.ReadFile("doc.md")
+			if err != nil {
+				t.Fatalf("%+v", err)
+			}
+
+			if g := string(data); g != tc.Expected {
+				t.Errorf("update_section: expected:\n%q\ngot:\n%q", tc.Expected, g)
+			}
+		})
+	}
+}
+
+func TestListSectionsSkipsFrontMatter(t *testing.T) {
+	srv := newTestServer(t, "doc.md", "---\ntitle: Doc\n---\n\n## First\n\nText\n")
+
+	_, out, err := srv.handleListSections(context.Background(), nil, fileInput{File: "doc.md"})
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
 
-	data, err := srv.root.ReadFile("doc.md")
-	if err != nil {
-		t.Fatalf("%+v", err)
-	}
-
-	expected := "## First\n\nReplaced.\n\n## Second\n\nText.\n"
-	if g := string(data); g != expected {
-		t.Errorf("update_section: expected:\n%s\ngot:\n%s", expected, g)
+	if len(out.Sections) != 1 || out.Sections[0].Title != "First" {
+		t.Errorf("list_sections: expected only 'First', got %+v", out.Sections)
 	}
 }
 

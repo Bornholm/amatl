@@ -22,6 +22,8 @@ import (
 	"github.com/yuin/goldmark/extension"
 	goldmarkparser "github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
+	"go.abhg.dev/goldmark/frontmatter"
 )
 
 // mcpServer holds the workspace root and provides the MCP tool handlers.
@@ -260,7 +262,7 @@ func (srv *mcpServer) handleUpdateSection(
 	_ *sdkmcp.CallToolRequest,
 	args updateInput,
 ) (*sdkmcp.CallToolResult, updateOutput, error) {
-	doc, source, err := parseMarkdownFile(srv.root, args.File)
+	doc, source, starts, err := parseMarkdownFileWithStarts(srv.root, args.File)
 	if err != nil {
 		return nil, updateOutput{}, errors.Wrapf(err, "could not parse file %q", args.File)
 	}
@@ -281,7 +283,7 @@ func (srv *mcpServer) handleUpdateSection(
 		)
 	}
 
-	start, end := nodeSourceRange(nodes, source)
+	start, end := nodeSourceRange(nodes, source, starts)
 	if start < 0 || end <= start {
 		return nil, updateOutput{}, fmt.Errorf(
 			"could not determine the byte range for selector %q in %q — the matched nodes may not be block-level elements; use a heading selector (e.g. h2#my-section) to target a full section",
@@ -393,17 +395,82 @@ func escapeContains(s string) string {
 // ---------------------------------------------------------------------------
 
 func parseMarkdownFile(root *os.Root, name string) (ast.Node, []byte, error) {
+	doc, data, _, err := parseMarkdownFileWithStarts(root, name)
+	return doc, data, err
+}
+
+// parseMarkdownFileWithStarts parses the file like parseMarkdownFile, and
+// also returns the source offset where each block opens.
+func parseMarkdownFileWithStarts(root *os.Root, name string) (ast.Node, []byte, blockStarts, error) {
 	data, err := root.ReadFile(name)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "could not read file %q", name)
+		return nil, nil, nil, errors.Wrapf(err, "could not read file %q", name)
 	}
 
-	md := goldmark.New(goldmark.WithExtensions(extension.GFM, &container.Extension{}))
-	p := md.Parser()
-	p.AddOptions(goldmarkparser.WithAutoHeadingID())
+	starts := blockStarts{}
 
-	doc := p.Parse(text.NewReader(data))
-	return doc, data, nil
+	blockParsers := append(
+		goldmarkparser.DefaultBlockParsers(),
+		util.Prioritized(&container.BlockParser{}, container.BlockParserPriority),
+	)
+	for i, bp := range blockParsers {
+		blockParsers[i] = util.Prioritized(&startRecorder{
+			BlockParser: bp.Value.(goldmarkparser.BlockParser),
+			starts:      starts,
+		}, bp.Priority)
+	}
+
+	p := goldmarkparser.NewParser(
+		goldmarkparser.WithBlockParsers(blockParsers...),
+		goldmarkparser.WithInlineParsers(goldmarkparser.DefaultInlineParsers()...),
+		goldmarkparser.WithParagraphTransformers(goldmarkparser.DefaultParagraphTransformers()...),
+	)
+
+	md := goldmark.New(
+		goldmark.WithParser(p),
+		goldmark.WithExtensions(
+			extension.GFM,
+			&frontmatter.Extender{Mode: frontmatter.SetMetadata},
+		),
+	)
+	md.Parser().AddOptions(goldmarkparser.WithAutoHeadingID())
+
+	doc := md.Parser().Parse(text.NewReader(data))
+	return doc, data, starts, nil
+}
+
+// blockStarts maps each block to the source offset of the line where its
+// parser opened it.
+type blockStarts map[ast.Node]int
+
+// startRecorder wraps a block parser to record where each block opens.
+// goldmark keeps the content lines of a block but not its markers: the
+// fences of a code block, a thematic break or the underline of a setext
+// heading are found in no Lines().
+type startRecorder struct {
+	goldmarkparser.BlockParser
+	starts blockStarts
+}
+
+// Open implements parser.BlockParser.
+func (r *startRecorder) Open(parent ast.Node, reader text.Reader, pc goldmarkparser.Context) (ast.Node, goldmarkparser.State) {
+	_, segment := reader.PeekLine()
+
+	n, state := r.BlockParser.Open(parent, reader, pc)
+	if n != nil {
+		if _, exists := r.starts[n]; !exists {
+			r.starts[n] = segment.Start
+		}
+	}
+
+	return n, state
+}
+
+// SetOption implements parser.SetOptioner.
+func (r *startRecorder) SetOption(name goldmarkparser.OptionName, value any) {
+	if so, ok := r.BlockParser.(goldmarkparser.SetOptioner); ok {
+		so.SetOption(name, value)
+	}
 }
 
 func renderNodesToMarkdown(nodes []ast.Node, source []byte) (string, error) {
@@ -428,62 +495,76 @@ func renderNodesToMarkdown(nodes []ast.Node, source []byte) (string, error) {
 	return buf.String(), nil
 }
 
-// nodeSourceRange returns the [start, end) byte range of the given nodes.
-// Container blocks such as lists and blockquotes hold no lines of their own,
-// so the range covers the lines of every descendant, and the fences of
-// container directives.
-// ATX headings store only the content (after '## ') in their Lines(), so
-// we walk back to the true start of the line.
-func nodeSourceRange(nodes []ast.Node, source []byte) (start, end int) {
-	start = math.MaxInt
-	end = 0
-	extend := func(s, e int) {
-		if s < start {
-			start = s
-		}
-		if e > end {
-			end = e
-		}
-	}
-	for _, n := range nodes {
-		_ = ast.Walk(n, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
-			if !entering || n.Type() != ast.TypeBlock {
-				return ast.WalkContinue, nil
-			}
-			if c, ok := n.(*container.Node); ok {
-				s, e := c.SourceRange()
-				if s >= 0 {
-					extend(s, s)
-				}
-				if e >= 0 {
-					extend(e, e)
-				}
-			}
-			lines := n.Lines()
-			for i := 0; i < lines.Len(); i++ {
-				seg := lines.At(i)
-				extend(seg.Start, seg.Stop)
-			}
-			return ast.WalkContinue, nil
-		})
-	}
-	if start == math.MaxInt {
+// nodeSourceRange returns the [start, end) byte range of the given
+// consecutive top-level nodes. The range runs from the line where the first
+// node opens to the line where the next top-level node opens, or to the end
+// of the source, without the blank lines in between.
+func nodeSourceRange(nodes []ast.Node, source []byte, starts blockStarts) (start, end int) {
+	if len(nodes) == 0 {
 		return -1, -1
 	}
+
+	start = blockStart(nodes[0], source, starts)
+	if start < 0 {
+		return -1, -1
+	}
+
+	end = len(source)
+	if next := nodes[len(nodes)-1].NextSibling(); next != nil {
+		if end = blockStart(next, source, starts); end < 0 {
+			return -1, -1
+		}
+	}
+
+	// Leave the blank lines separating the range from the next node
+	last := end
+	for last > start && isBlankByte(source[last-1]) {
+		last--
+	}
+	for last < end && source[last] != '\n' {
+		last++
+	}
+	if last < end {
+		last++ // include the '\n'
+	}
+
+	return start, last
+}
+
+// blockStart returns the offset of the beginning of the line where the given
+// block starts, or -1 if it is unknown. A block transformed after parsing, such
+// as a setext heading or a table built from a paragraph, has no recorded start
+// of its own, so the content lines of its descendants are used as well.
+func blockStart(n ast.Node, source []byte, starts blockStarts) int {
+	start := math.MaxInt
+
+	_ = ast.Walk(n, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering || n.Type() != ast.TypeBlock {
+			return ast.WalkContinue, nil
+		}
+		if s, exists := starts[n]; exists && s < start {
+			start = s
+		}
+		if lines := n.Lines(); lines.Len() > 0 && lines.At(0).Start < start {
+			start = lines.At(0).Start
+		}
+		return ast.WalkContinue, nil
+	})
+
+	if start == math.MaxInt {
+		return -1
+	}
+
 	// Walk back to the beginning of the line (ATX headings store content after '## ')
 	for start > 0 && source[start-1] != '\n' {
 		start--
 	}
-	// Advance end to include the trailing newline if not already included
-	if end > 0 && end <= len(source) && source[end-1] != '\n' {
-		for end < len(source) && source[end] != '\n' {
-			end++
-		}
-		if end < len(source) {
-			end++ // include the '\n'
-		}
-	}
-	return
+
+	return start
+}
+
+func isBlankByte(b byte) bool {
+	return b == ' ' || b == '\t' || b == '\r' || b == '\n'
 }
 
 // headingLevelFromSelector extracts the heading level from a selector like
