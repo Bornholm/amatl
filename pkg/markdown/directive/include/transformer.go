@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Bornholm/amatl/pkg/markdown/destination"
 	"github.com/Bornholm/amatl/pkg/markdown/directive"
 	"github.com/Bornholm/amatl/pkg/markdown/directive/container"
-	"github.com/Bornholm/amatl/pkg/markdown/destination"
 	"github.com/Bornholm/amatl/pkg/markdown/selector"
 	"github.com/Bornholm/amatl/pkg/pipeline"
 	"github.com/Bornholm/amatl/pkg/resolver"
@@ -229,7 +229,7 @@ func rewriteDestination(dirPath resolver.Path, raw []byte) []byte {
 		return raw
 	}
 
-	return []byte(destination.Encode(dirPath.JoinPath(path).String()))
+	return []byte(destination.Join(dirPath, path))
 }
 
 var _ directive.NodeTransformer = &NodeTransformer{}

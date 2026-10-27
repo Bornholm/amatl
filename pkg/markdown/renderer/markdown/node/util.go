@@ -8,6 +8,7 @@ import (
 
 	"github.com/Bornholm/amatl/pkg/markdown/renderer/markdown"
 	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/util"
 )
 
 func listItemMarkerChars(tnode *ast.ListItem) []byte {
@@ -78,27 +79,50 @@ func writeClean(w io.Writer, bs []byte) error {
 }
 
 // formatDestination returns the destination of a link or an image as it must
-// be written between parentheses. A destination holding a space, a line
-// break, a '<' or unbalanced parentheses is only valid between angle
-// brackets, where '<' and '>' must be escaped.
+// be written between parentheses. A destination holding a space, a '<' or
+// unbalanced parentheses is only valid between angle brackets, where an
+// unescaped '<' or '>' must be escaped. Line breaks are valid in neither
+// form and are percent-encoded.
 func formatDestination(destination []byte) []byte {
+	destination = bytes.ReplaceAll(destination, []byte("\n"), []byte("%0A"))
+	destination = bytes.ReplaceAll(destination, []byte("\r"), []byte("%0D"))
+
 	if !needsAngleBrackets(destination) {
 		return destination
 	}
 
-	escaped := bytes.ReplaceAll(destination, []byte("<"), []byte(`\<`))
-	escaped = bytes.ReplaceAll(escaped, []byte(">"), []byte(`\>`))
+	formatted := make([]byte, 0, len(destination)+4)
+	formatted = append(formatted, '<')
 
-	return append(append([]byte{'<'}, escaped...), '>')
+	for i := 0; i < len(destination); i++ {
+		c := destination[i]
+
+		if isEscape(destination, i) {
+			formatted = append(formatted, c, destination[i+1])
+			i++
+			continue
+		}
+
+		if c == '<' || c == '>' {
+			formatted = append(formatted, '\\')
+		}
+
+		formatted = append(formatted, c)
+	}
+
+	return append(formatted, '>')
 }
 
 func needsAngleBrackets(destination []byte) bool {
 	depth := 0
 
 	for i := 0; i < len(destination); i++ {
+		if isEscape(destination, i) {
+			i++
+			continue
+		}
+
 		switch c := destination[i]; {
-		case c == '\\':
-			i++ // skip the escaped character
 		case c <= ' ' || c == '<':
 			return true
 		case c == '(':
@@ -111,4 +135,11 @@ func needsAngleBrackets(destination []byte) bool {
 	}
 
 	return depth != 0
+}
+
+// isEscape reports whether the byte at i is a backslash escaping the next
+// one: CommonMark only treats a backslash before an ASCII punctuation
+// character as an escape
+func isEscape(destination []byte, i int) bool {
+	return destination[i] == '\\' && i+1 < len(destination) && util.IsPunct(destination[i+1])
 }

@@ -14,6 +14,9 @@ func TestFormatDestination(t *testing.T) {
 		`./image\).png`:        `./image\).png`,
 		"./a<b>.png":           `<./a\<b\>.png>`,
 		"https://example.com/": "https://example.com/",
+		`./a\<b c.png`:         `<./a\<b c.png>`,
+		`./a\ b.png`:           `<./a\ b.png>`,
+		"./a\nb.png":           "./a%0Ab.png",
 	}
 
 	for destination, expected := range testCases {
